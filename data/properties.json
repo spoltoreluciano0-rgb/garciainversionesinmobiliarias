@@ -1,0 +1,77 @@
+[
+  {
+    "id": "demo-casa-nordelta",
+    "app_id": "1001",
+    "crm_code": "DEMO-1001",
+    "titulo": "Casa moderna en Nordelta",
+    "operacion": "venta",
+    "tipo": "casa",
+    "precio": "USD 450.000",
+    "ubicacion": "Nordelta · Buenos Aires",
+    "direccion": "Nordelta, Tigre, Buenos Aires, Argentina",
+    "mapa": "https://www.google.com/maps/place/B1670+Rinc%C3%B3n+de+Milberg,+Provincia+de+Buenos+Aires/@-34.4082283,-58.6625955,17z/data=!3m1!4b1!4m15!1m8!3m7!1s0x95bca141d4279f95:0xe04c023895a15ca2!2sNordelta,+B1670+Benavidez,+Provincia+de+Buenos+Aires!3b1!8m2!3d-34.4026444!4d-58.6684776!16s%2Fm%2F02rt_gv!3m5!1s0x95bca15a993e8f15:0x11c743615d602537!8m2!3d-34.4082284!4d-58.6577246!16s%2Fg%2F11fkr7ddgw?entry=ttu&g_ep=EgoyMDI2MDYwMS4wIKXMDSoASAFQAw%3D%3D",
+    "descripcion": "Propiedad de Referencia",
+    "imagen": "assets/propiedades/casa-nordelta.jpeg",
+    "ambientes": "",
+    "banos": "",
+    "superficie": "",
+    "tag": "Destacada",
+    "linkWhatsapp": "https://wa.me/5491167240353",
+    "linkMercadoLibre": "",
+    "linkZonaprop": "",
+    "amenities": [
+      "Barrio privado",
+      "Jardín",
+      "Arquitectura moderna"
+    ],
+    "raw": {},
+    "updated_at": "2026-05-06T00:00:00.000Z",
+    "pais": "Argentina",
+    "moneda": "USD",
+    "precio_numero": 450000,
+    "imagenes": [
+      "assets/propiedades/casa-nordelta.jpeg"
+    ],
+    "productorNombre": "",
+    "productorEmail": "contacto@garciainversiones.com.ar"
+  },
+
+  {
+    "id": "demo-condor-resort",
+    "app_id": "1002",
+    "crm_code": "DEMO-1002",
+    "titulo": "Oportunidad internacional frente al mar",
+    "operacion": "Proyecto",
+    "tipo": "emprendimiento",
+    "precio": "USD 550.000",
+    "ubicacion": "Estados Unidos · Frente al mar",
+    "direccion": "Nordelta, Tigre, Buenos Aires, Argentina",
+    "mapa": "https://www.google.com/maps/place/B1670+Rinc%C3%B3n+de+Milberg,+Provincia+de+Buenos+Aires/@-34.4082283,-58.6625955,17z/data=!3m1!4b1!4m15!1m8!3m7!1s0x95bca141d4279f95:0xe04c023895a15ca2!2sNordelta,+B1670+Benavidez,+Provincia+de+Buenos+Aires!3b1!8m2!3d-34.4026444!4d-58.6684776!16s%2Fm%2F02rt_gv!3m5!1s0x95bca15a993e8f15:0x11c743615d602537!8m2!3d-34.4082284!4d-58.6577246!16s%2Fg%2F11fkr7ddgw?entry=ttu&g_ep=EgoyMDI2MDYwMS4wIKXMDSoASAFQAw%3D%3D",
+    "descripcion": "Unidad de referencia para oportunidades internacionales y proyectos especiales.",
+    "imagen": "assets/propiedades/condor-resort.jpeg",
+    "ambientes": "Estacionamiento, Zoom, Pileta",
+    "banos": "4",
+    "superficie": "20004mts",
+    "tag": "Proyecto",
+    "linkWhatsapp": "https://wa.me/5491167240353",
+    "linkMercadoLibre": "",
+    "linkZonaprop": "",
+    "amenities": [
+      "Frente al mar",
+      "Amenities",
+      "Renta turística"
+    ],
+    "raw": {},
+    "updated_at": "2026-05-06T00:00:00.000Z",
+    "pais": "USA",
+    "moneda": "USD",
+    "precio_numero": 550000,
+    "imagenes": [
+      "assets/propiedades/condor-resort.jpeg",
+      "assets/propiedades/condor-resort.jpeg",
+      "assets/propiedades/casa-nordelta.jpeg"
+    ],
+    "productorNombre": "",
+    "productorEmail": "contacto@garciainversiones.com.ar"
+  }
+]

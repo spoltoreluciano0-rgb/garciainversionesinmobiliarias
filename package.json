@@ -1,0 +1,17 @@
+{
+  "name": "garcia-inversiones-inmobiliarias",
+  "version": "1.0.0",
+  "description": "Web Garcia Inversiones Inmobiliarias integrada con CRM 2clics",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "resend": "^6.12.4"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

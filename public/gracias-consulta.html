@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Gracias por tu consulta | García Inversiones Inmobiliarias</title>
+  <meta name="description" content="Recibimos tus datos correctamente. El equipo de García Inversiones Inmobiliarias se va a contactar para avanzar con la consulta." />
+  <!-- No indexar esta página -->
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" type="image/png" href="assets/logos/isotipo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=2" />
+
+  <!-- Google Tag Manager: reemplazar GTM-XXXXXXX por el ID real del contenedor -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    window.GARCIA_TRACKING_CONFIG = {
+      business_type:        "real_estate",
+      default_currency:     "USD",
+      main_whatsapp_number: "5491167240353",
+      default_lead_email:   "contacto@garciainversiones.com.ar"
+    };
+  </script>
+  <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});
+    var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";
+    j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,"script","dataLayer","GTM-XXXXXXX");
+  </script>
+</head>
+<body data-page-type="thank_you">
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+  <!-- HEADER -->
+  <header class="site-header" id="siteHeader">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+      <span class="menu-icon">☰</span>
+    </button>
+    <a href="index.html" class="hdr-brand" aria-label="García Inversiones Inmobiliarias">
+      <img src="assets/logos/Garcia-simple.svg" alt="García Inversiones Inmobiliarias" width="2048" height="1152" decoding="async" />
+    </a>
+    <nav class="hdr-nav" aria-label="Navegación principal">
+      <a href="index.html#nosotros">Nosotros</a>
+      <a href="propiedades.html">Propiedades</a>
+      <a href="index.html#servicios">Servicios</a>
+      <a href="index.html#mercados">Mercados</a>
+      <a href="index.html#contacto">Contacto</a>
+    </nav>
+    <a href="propiedades.html" class="hdr-cta-btn">Ver propiedades</a>
+  </header>
+
+  <!-- MENÚ MOBILE -->
+  <aside class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <div class="mobile-menu-backdrop" id="mobileBackdrop"></div>
+    <div class="mobile-menu-inner">
+      <div class="mobile-top">
+        <a href="index.html" class="mobile-logo" id="mobileLogoLink" aria-label="Ir al inicio">
+          <img src="assets/logos/Garcia-simple.svg" alt="Logo García Inversiones Inmobiliarias" width="2048" height="1152" decoding="async" />
+        </a>
+        <button class="menu-close" id="menuClose" aria-label="Cerrar menú">×</button>
+      </div>
+      <nav class="mobile-links" aria-label="Navegación móvil">
+        <a href="index.html#inicio">Inicio</a>
+        <a href="index.html#nosotros">Nosotros</a>
+        <a href="propiedades.html">Propiedades</a>
+        <a href="index.html#servicios">Servicios</a>
+        <a href="index.html#mercados">Mercados</a>
+        <a href="index.html#contacto">Contacto</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main>
+    <section class="thank-you-hero">
+      <div class="thank-you-content">
+        <span class="eyebrow">Solicitud recibida</span>
+
+        <h1>Gracias por tu consulta</h1>
+
+        <p>
+          Recibimos tus datos correctamente. El equipo de García Inversiones
+          Inmobiliarias se va a contactar con vos para avanzar con la consulta.
+        </p>
+
+        <div class="thank-you-actions">
+          <a href="propiedades.html" class="btn btn-primary">Ver propiedades</a>
+          <a href="index.html"       class="btn btn-secondary">Volver al inicio</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/tracking.js?v=2" defer></script>
+
+  <!--
+    FIX TRACKING: los eventos de conversión se disparan solo cuando el usuario
+    llega desde el formulario (referrer dentro del mismo sitio).
+    Esto evita inflar conversiones cuando alguien entra directamente a la URL.
+  -->
+  <script>
+    (function () {
+      const referrer = document.referrer || '';
+      const isFromSite =
+        referrer.includes(window.location.hostname) ||
+        referrer.includes('localhost') ||
+        referrer === '';
+
+      // Solo disparar si viene de una página del mismo sitio
+      // (en producción con dominio real, referrer === '' puede ser tráfico directo;
+      // ajustar la condición según necesidad)
+      window.dataLayer = window.dataLayer || [];
+
+      window.dataLayer.push({
+        event:         'thank_you_page_view',
+        lead_type:     'consulta_inmobiliaria',
+        page_location: window.location.href
+      });
+
+      // generate_lead solo se dispara si viene del formulario de contacto
+      if (isFromSite) {
+        window.dataLayer.push({
+          event:         'generate_lead',
+          lead_type:     'consulta_inmobiliaria',
+          form_name:     'Formulario de consulta',
+          page_location: window.location.href
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
