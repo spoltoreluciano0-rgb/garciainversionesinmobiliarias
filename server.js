@@ -31,7 +31,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const CONTACT_TO_EMAIL   = process.env.CONTACT_TO_EMAIL   || 'contacto@garciainversiones.com.ar';
+const CONTACT_TO_EMAIL   = process.env.CONTACT_TO_EMAIL   || 'spoltoreluciano0@gmail.com';
 const CONTACT_FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || 'García Inversiones <onboarding@resend.dev>';
 
 const DATA_DIR        = path.join(__dirname, 'data');
@@ -213,7 +213,7 @@ function crmToWebProperty(prop) {
     video:           prop.prop_video_url && prop.prop_video_url !== 'null' ? prop.prop_video_url : '',
     tour:            prop.virtual_tour   && prop.virtual_tour   !== 'null' ? prop.virtual_tour   : '',
     productorNombre: prop.productorNombre || prop.productor_nombre || '',
-    productorEmail:  prop.productorEmail  || prop.productor_email  || 'contacto@garciainversiones.com.ar',
+    productorEmail:  prop.productorEmail  || prop.productor_email  || 'spoltoreluciano0@gmail.com',
     amenities:       Array.isArray(prop.amenities) ? prop.amenities.map(a => a.name).filter(Boolean) : [],
     raw:             prop,
     updated_at:      new Date().toISOString()
@@ -373,7 +373,7 @@ app.post('/api/contact', async (req, res) => {
     return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' });
   }
 
-  const { name, nombre, apellido, phone, telefono, email, message, mensaje, property_app_id, development_app_id } = req.body || {};
+  const { name, nombre, apellido, phone, telefono, email, message, mensaje, motivo, property_app_id, development_app_id } = req.body || {};
 
   const fullName     = String(name || [nombre, apellido].filter(Boolean).join(' ') || '').trim();
   const finalPhone   = String(phone    || telefono || '').trim();
@@ -425,7 +425,7 @@ app.post('/api/contact', async (req, res) => {
   });
   writeJson(LEADS_FILE, leads);
 
-  const emailTo = req.body?.destinatario || req.body?.productorEmail || CONTACT_TO_EMAIL;
+  const emailTo = CONTACT_TO_EMAIL;
 
   // FIX SEGURIDAD: todos los valores del usuario se escapan antes de insertar en HTML
   await sendEmail({
@@ -438,6 +438,7 @@ app.post('/api/contact', async (req, res) => {
         <p><strong>Nombre:</strong> ${escapeHtml(fullName)}</p>
         <p><strong>Teléfono / WhatsApp:</strong> ${escapeHtml(finalPhone)}</p>
         <p><strong>Email:</strong> ${escapeHtml(finalEmail)}</p>
+        <p><strong>Motivo de consulta:</strong> ${escapeHtml(motivo || 'No especificado')}</p>
         <p><strong>Mensaje:</strong> ${escapeHtml(finalMessage || 'Sin mensaje adicional')}</p>
 
         <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
