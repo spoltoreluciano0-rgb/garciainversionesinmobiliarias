@@ -106,9 +106,12 @@ app.use(express.static(PUBLIC_DIR, {
 }));
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
-function ensureFile(filePath, fallback) {
+function ensureFile(filePath, fallback = []) {
+  if (process.env.VERCEL) {
+    return;
+  }
+
   if (!fs.existsSync(filePath)) {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(fallback, null, 2));
   }
 }
@@ -123,7 +126,11 @@ function readJson(filePath, fallback = []) {
 }
 
 function writeJson(filePath, data) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  if (process.env.VERCEL) {
+    console.log("Vercel detectado: no se escribe archivo JSON en producción.");
+    return;
+  }
+
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
