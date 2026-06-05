@@ -231,10 +231,29 @@ function createEventId(prefix = 'server') {
 }
 
 async function sendEmail({ to, subject, html }) {
+  console.log("Intentando enviar email con Resend a:", to);
+
   if (!resend) {
-    console.warn('Resend no configurado. Email no enviado.');
-    return { ok: false };
+    console.error("RESEND_API_KEY no está configurada en Vercel.");
+    return { ok: false, error: "RESEND_API_KEY no configurada" };
   }
+
+  try {
+    const result = await resend.emails.send({
+      from: CONTACT_FROM_EMAIL,
+      to,
+      subject,
+      html
+    });
+
+    console.log("Email enviado por Resend:", result);
+
+    return { ok: true, result };
+  } catch (error) {
+    console.error("Error enviando email con Resend:", error);
+    return { ok: false, error: error.message || error };
+  }
+}
 
   try {
     const result = await resend.emails.send({
@@ -248,7 +267,7 @@ async function sendEmail({ to, subject, html }) {
     console.error('Error enviando email con Resend:', error.message);
     return { ok: false, error };
   }
-}
+
 
 function pickTrackingFields(body = {}) {
   const keys = [
