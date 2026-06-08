@@ -1,7 +1,12 @@
 node_modules/
+# Variables de entorno — NUNCA subir el .env real
 .env
+.env.*
+!.env.example
 .DS_Store
 .vercel/
 npm-debug.log*
+yarn-error.log*
+# Archivos de datos con info sensible de usuarios
 data/leads.json
 data/newsletter.json

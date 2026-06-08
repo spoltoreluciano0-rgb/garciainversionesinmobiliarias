@@ -31,7 +31,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const CONTACT_TO_EMAIL   = process.env.CONTACT_TO_EMAIL   || 'spoltoreluciano0@gmail.com';
+const CONTACT_TO_EMAIL   = process.env.CONTACT_TO_EMAIL   || '';
 const CONTACT_FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || 'García Inversiones <onboarding@resend.dev>';
 
 const DATA_DIR        = path.join(__dirname, 'data');
@@ -58,8 +58,8 @@ setInterval(() => {
 }, 600_000);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 app.use((req, res, next) => {
   const ip = req.ip || req.socket?.remoteAddress || '';
@@ -72,12 +72,35 @@ app.use((req, res, next) => {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+      // GTM + GA4 + Google Ads + Meta Pixel
+      "script-src 'self' 'unsafe-inline'"
+        + " https://www.googletagmanager.com"
+        + " https://www.google-analytics.com"
+        + " https://ssl.google-analytics.com"
+        + " https://www.googleadservices.com"
+        + " https://googleads.g.doubleclick.net"
+        + " https://www.google.com"
+        + " https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://api.2clics.com.ar",
-      "frame-src https://www.google.com https://www.youtube.com https://maps.google.com",
+      "img-src 'self' data: blob: https:",
+      // Fetch/XHR: analytics + CRM + Meta CAPI
+      "connect-src 'self'"
+        + " https://www.google-analytics.com"
+        + " https://analytics.google.com"
+        + " https://region1.google-analytics.com"
+        + " https://stats.g.doubleclick.net"
+        + " https://www.googleadservices.com"
+        + " https://googleads.g.doubleclick.net"
+        + " https://www.facebook.com"
+        + " https://api.2clics.com.ar",
+      // iframes: Google Maps + YouTube + GTM noscript
+      "frame-src"
+        + " https://www.google.com"
+        + " https://maps.google.com"
+        + " https://www.youtube.com"
+        + " https://www.googletagmanager.com"
+        + " https://td.doubleclick.net",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'"
@@ -88,6 +111,41 @@ app.use((req, res, next) => {
   req._clientIp = ip;
   next();
 });
+
+// ── CORS: solo permitir mismo origen en endpoints POST de /api/ ───────────────
+// Agrega aquí el dominio Vercel preview si necesitás probar desde ese entorno
+const _wwwVariant = PUBLIC_BASE_URL.replace('https://', 'https://www.');
+const ALLOWED_ORIGINS = [
+  PUBLIC_BASE_URL,
+  _wwwVariant,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  'http://localhost:3000',
+  'http://localhost:3001',
+].filter(Boolean);
+
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin || '';
+  // Si no hay Origin header (servidor→servidor, curl, Postman) se permite pasar
+  // Los endpoints sensibles tienen su propia validación de hash
+  if (origin && !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
+    return res.status(403).json({ ok: false, message: 'Origen no permitido.' });
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Vary', 'Origin');
+  }
+  next();
+});
+
+app.options('/api/*', (_req, res) => res.sendStatus(204));
+
+// ── Redirecciones 301: .html → URL limpia (preserva query string) ─────────────
+app.get('/index.html',         (req, res) => res.redirect(301, `/${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));
+app.get('/propiedades.html',   (req, res) => res.redirect(301, `/propiedades${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));
+app.get('/propiedad.html',     (req, res) => res.redirect(301, `/propiedad${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));
+app.get('/gracias-consulta.html', (_req, res) => res.redirect(301, '/gracias-consulta'));
 
 app.use(express.static(PUBLIC_DIR, {
   maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
@@ -127,7 +185,8 @@ function readJson(filePath, fallback = []) {
 
 function writeJson(filePath, data) {
   if (process.env.VERCEL) {
-    console.log("Vercel detectado: no se escribe archivo JSON en producción.");
+    // En Vercel el filesystem es read-only — los datos van solo a la DB/CRM externo
+    return;
     return;
   }
 
@@ -148,6 +207,31 @@ function escapeHtml(value) {
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
 }
+
+// Longitudes máximas aceptadas por campo
+const MAX_LENGTHS = {
+  name:    120,
+  phone:    30,
+  email:   254,
+  message: 2000,
+  motivo:  100,
+};
+
+// Validación básica de formato de teléfono
+function isValidPhone(phone) {
+  return /^[+\d\s\-().]{6,30}$/.test(String(phone || '').trim());
+}
+
+// Honeypot anti-bot: el campo "website" debe estar vacío (oculto para humanos, bots lo llenan)
+function isBotRequest(body = {}) {
+  return typeof body.website === 'string' && body.website.length > 0;
+}
+
+// Valores permitidos para el campo motivo del formulario de contacto
+const MOTIVOS_PERMITIDOS = new Set([
+  '', 'Inversión inmobiliaria', 'Compra de propiedad', 'Venta de propiedad',
+  'Alquiler de propiedad', 'Mercados internacionales', 'Asesoramiento general'
+]);
 
 function slugify(text) {
   return String(text || 'propiedad')
@@ -213,7 +297,7 @@ function crmToWebProperty(prop) {
     video:           prop.prop_video_url && prop.prop_video_url !== 'null' ? prop.prop_video_url : '',
     tour:            prop.virtual_tour   && prop.virtual_tour   !== 'null' ? prop.virtual_tour   : '',
     productorNombre: prop.productorNombre || prop.productor_nombre || '',
-    productorEmail:  prop.productorEmail  || prop.productor_email  || 'spoltoreluciano0@gmail.com',
+    productorEmail:  prop.productorEmail  || prop.productor_email  || CONTACT_TO_EMAIL || '',
     amenities:       Array.isArray(prop.amenities) ? prop.amenities.map(a => a.name).filter(Boolean) : [],
     raw:             prop,
     updated_at:      new Date().toISOString()
@@ -231,14 +315,16 @@ function createEventId(prefix = 'server') {
 }
 
 async function sendEmail({ to, subject, html }) {
-  console.log("Intentando enviar email con Resend a:", to);
+  console.log('[sendEmail] Enviando email...');
 
   if (!resend) {
-    console.error("RESEND_API_KEY no está configurada.");
-    return {
-      ok: false,
-      error: "RESEND_API_KEY no configurada"
-    };
+    console.error('[sendEmail] RESEND_API_KEY no está configurada.');
+    return { ok: false, error: 'RESEND_API_KEY no configurada' };
+  }
+
+  if (!to) {
+    console.error('[sendEmail] CONTACT_TO_EMAIL no está configurado.');
+    return { ok: false, error: 'Destinatario no configurado (CONTACT_TO_EMAIL)' };
   }
 
   try {
@@ -258,7 +344,7 @@ async function sendEmail({ to, subject, html }) {
       };
     }
 
-    console.log("Email enviado correctamente por Resend:", result.data);
+    console.log('[sendEmail] Email enviado correctamente. ID:', result.data?.id || '(sin id)');
 
     return {
       ok: true,
@@ -307,7 +393,7 @@ app.get('/sitemap.xml', (_req, res) => {
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${base}/propiedades.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>${base}/propiedades</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
 </urlset>`);
 });
 
@@ -343,6 +429,14 @@ app.get('/propiedad/:id', (req, res) => {
 
 // ── Webhook CRM 2Clics ───────────────────────────────────────────────────────
 app.post('/api/2clics/property', (req, res) => {
+  if (!req.is('application/json')) {
+    return res.status(415).send('UNSUPPORTED_MEDIA_TYPE');
+  }
+  // Rate limit: máx 120 llamadas por minuto por IP (margen para CRM legítimo)
+  if (!checkRate(req._clientIp, '2clics', 120, 60_000)) {
+    return res.status(429).send('TOO_MANY_REQUESTS');
+  }
+
   const body = req.body || {};
   const prop = body.prop || body;
 
@@ -387,8 +481,16 @@ app.post('/api/2clics/property', (req, res) => {
 
 // ── Formulario de contacto ───────────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ ok: false, message: 'Formato no soportado.' });
+  }
   if (!checkRate(req._clientIp, 'contact', 5, 60_000)) {
     return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' });
+  }
+
+  // Honeypot: si el campo oculto "website" tiene contenido, es un bot
+  if (isBotRequest(req.body)) {
+    return res.json({ ok: true }); // silencioso — no revelar que fue detectado
   }
 
   const { name, nombre, apellido, phone, telefono, email, message, mensaje, motivo, property_app_id, development_app_id } = req.body || {};
@@ -397,17 +499,41 @@ app.post('/api/contact', async (req, res) => {
   const finalPhone   = String(phone    || telefono || '').trim();
   const finalEmail   = String(email    || '').trim();
   const finalMessage = String(message  || mensaje  || '').trim();
+  const motivoVal    = String(motivo   || '').trim();
 
-  // Validaciones
+  // Validaciones de presencia
   if (!fullName) {
     return res.status(400).json({ ok: false, message: 'El nombre es requerido.' });
   }
   if (!finalPhone) {
     return res.status(400).json({ ok: false, message: 'El teléfono es requerido.' });
   }
-  // FIX SEGURIDAD: validación de formato de email
   if (!finalEmail || !isValidEmail(finalEmail)) {
     return res.status(400).json({ ok: false, message: 'Ingresá un email válido.' });
+  }
+
+  // Validaciones de longitud
+  if (fullName.length > MAX_LENGTHS.name) {
+    return res.status(400).json({ ok: false, message: 'El nombre es demasiado largo.' });
+  }
+  if (finalPhone.length > MAX_LENGTHS.phone) {
+    return res.status(400).json({ ok: false, message: 'El teléfono es demasiado largo.' });
+  }
+  if (finalEmail.length > MAX_LENGTHS.email) {
+    return res.status(400).json({ ok: false, message: 'El email es demasiado largo.' });
+  }
+  if (finalMessage.length > MAX_LENGTHS.message) {
+    return res.status(400).json({ ok: false, message: `El mensaje no puede superar los ${MAX_LENGTHS.message} caracteres.` });
+  }
+
+  // Validación de formato de teléfono
+  if (!isValidPhone(finalPhone)) {
+    return res.status(400).json({ ok: false, message: 'Ingresá un teléfono válido (solo números, espacios, +, -, ()).' });
+  }
+
+  // Validación de motivo contra lista permitida
+  if (motivoVal && !MOTIVOS_PERMITIDOS.has(motivoVal)) {
+    return res.status(400).json({ ok: false, message: 'Motivo de consulta no válido.' });
   }
 
   const eventId = req.body?.event_id || createEventId('lead');
@@ -445,43 +571,124 @@ app.post('/api/contact', async (req, res) => {
 
   const emailTo = CONTACT_TO_EMAIL;
 
-  // FIX SEGURIDAD: todos los valores del usuario se escapan antes de insertar en HTML
+  // Detectar si es consulta de propiedad específica
+  const isPropertyInquiry =
+    req.body?.form_type === 'property' ||
+    req.body?.form_type === 'consulta_propiedad' ||
+    !!(req.body?.property_title) ||
+    !!property_app_id;
+
+  const propertyTitle = escapeHtml(String(req.body?.property_title || '').trim().slice(0, 200));
+  const propertyUrl   = escapeHtml(String(req.body?.property_url || req.body?.page_location || '').trim());
+
+  // Asunto diferenciado por tipo de consulta
+  const emailSubject = isPropertyInquiry
+    ? propertyTitle
+      ? `Nueva consulta por propiedad — ${propertyTitle}`
+      : 'Nueva consulta por propiedad'
+    : 'Nueva consulta desde la web';
+
+  // Bloque HTML de propiedad (solo si aplica)
+  const propertyBlock = isPropertyInquiry ? `
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td style="background:#f0f4f8; border-left:4px solid #cd9f4f; padding:16px 20px; border-radius:0 8px 8px 0;">
+              <p style="margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#666;">Propiedad consultada</p>
+              <p style="margin:0 0 4px; font-size:17px; font-weight:700; color:#071628;">${propertyTitle || '<em>Sin título</em>'}</p>
+              ${propertyUrl ? `<p style="margin:6px 0 0;"><a href="${propertyUrl}" style="color:#cd9f4f; font-size:13px;">${propertyUrl}</a></p>` : ''}
+            </td>
+          </tr>
+        </table>` : '';
+
+  const dateStr = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+
+  // Todos los valores del usuario escapados antes de insertar en HTML
   const emailResult = await sendEmail({
     to:      emailTo,
-    subject: `Nueva consulta web - ${escapeHtml(fullName)}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; color: #0c2948; line-height: 1.6; max-width: 600px;">
-        <h2 style="color: #0c2948;">Nueva consulta desde García Inversiones</h2>
+    subject: emailSubject,
+    html: `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-        <p><strong>Nombre:</strong> ${escapeHtml(fullName)}</p>
-        <p><strong>Teléfono / WhatsApp:</strong> ${escapeHtml(finalPhone)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(finalEmail)}</p>
-        <p><strong>Motivo de consulta:</strong> ${escapeHtml(motivo || 'No especificado')}</p>
-        <p><strong>Mensaje:</strong> ${escapeHtml(finalMessage || 'Sin mensaje adicional')}</p>
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#071628 0%,#0c2948 100%);padding:28px 36px;">
+            <p style="margin:0;font-size:13px;color:#cd9f4f;letter-spacing:2px;text-transform:uppercase;">García Inversiones Inmobiliarias</p>
+            <h1 style="margin:8px 0 0;font-size:20px;color:#ffffff;font-weight:600;">${isPropertyInquiry ? '🏠 Nueva consulta por propiedad' : '📬 Nueva consulta desde la web'}</h1>
+          </td>
+        </tr>
 
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 36px;">
 
-        <p><strong>Tipo de lead:</strong> ${escapeHtml(payload.lead_type)}</p>
-        <p><strong>Formulario:</strong> ${escapeHtml(payload.form_name || 'Formulario web')}</p>
-        <p><strong>Propiedad:</strong> ${escapeHtml(req.body?.property_title || 'Consulta general')}</p>
-        <p><strong>URL:</strong> ${escapeHtml(req.body?.page_location || '')}</p>
+            ${propertyBlock}
 
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+            <!-- Datos del interesado -->
+            <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Datos del interesado</p>
+            <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="width:140px;color:#666;font-size:14px;">Nombre</td>
+                <td style="font-size:14px;font-weight:600;color:#071628;">${escapeHtml(fullName)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="color:#666;font-size:14px;">WhatsApp / Tel.</td>
+                <td style="font-size:14px;font-weight:600;color:#071628;"><a href="https://wa.me/${encodeURIComponent(finalPhone.replace(/\D/g,''))}" style="color:#cd9f4f;">${escapeHtml(finalPhone)}</a></td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="color:#666;font-size:14px;">Email</td>
+                <td style="font-size:14px;font-weight:600;color:#071628;"><a href="mailto:${escapeHtml(finalEmail)}" style="color:#cd9f4f;">${escapeHtml(finalEmail)}</a></td>
+              </tr>
+              ${motivoVal ? `
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="color:#666;font-size:14px;">Motivo</td>
+                <td style="font-size:14px;color:#071628;">${escapeHtml(motivoVal)}</td>
+              </tr>` : ''}
+              ${finalMessage ? `
+              <tr>
+                <td style="color:#666;font-size:14px;vertical-align:top;padding-top:10px;">Mensaje</td>
+                <td style="font-size:14px;color:#071628;padding-top:10px;">${escapeHtml(finalMessage)}</td>
+              </tr>` : ''}
+            </table>
 
-        <p><strong>UTM Source:</strong>   ${escapeHtml(payload.source   || '')}</p>
-        <p><strong>UTM Medium:</strong>   ${escapeHtml(payload.medium   || '')}</p>
-        <p><strong>UTM Campaign:</strong> ${escapeHtml(payload.campaign || '')}</p>
-        <p><strong>GCLID:</strong>        ${escapeHtml(payload.gclid    || '')}</p>
-        <p><strong>FBCLID:</strong>       ${escapeHtml(payload.fbclid   || '')}</p>
-      </div>
-    `
+            ${(payload.source || payload.medium || payload.campaign || payload.gclid || payload.fbclid) ? `
+            <!-- Origen y tracking -->
+            <p style="margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Origen del lead</p>
+            <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px;color:#555;margin-bottom:16px;">
+              ${payload.source   ? `<tr><td style="width:140px;">UTM Source</td><td>${escapeHtml(payload.source)}</td></tr>` : ''}
+              ${payload.medium   ? `<tr><td>UTM Medium</td><td>${escapeHtml(payload.medium)}</td></tr>` : ''}
+              ${payload.campaign ? `<tr><td>UTM Campaign</td><td>${escapeHtml(payload.campaign)}</td></tr>` : ''}
+              ${payload.gclid    ? `<tr><td>GCLID</td><td>${escapeHtml(payload.gclid)}</td></tr>` : ''}
+              ${payload.fbclid   ? `<tr><td>FBCLID</td><td>${escapeHtml(payload.fbclid)}</td></tr>` : ''}
+            </table>` : ''}
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f9f9f9;padding:16px 36px;border-top:1px solid #eee;">
+            <p style="margin:0;font-size:12px;color:#aaa;">Recibido el ${dateStr} · García Inversiones Inmobiliarias</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
   });
 
   if (!emailResult.ok) {
+    // En producción no exponer detalles internos del error de email
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    console.error('[/api/contact] Error de email:', emailResult.error);
     return res.status(500).json({
       ok: false,
-      message: "No pudimos enviar la consulta por email. Revisá la configuración de Resend.",
-      email_error: emailResult.error
+      message: 'No pudimos procesar tu consulta. Por favor intentá de nuevo más tarde o escribinos por WhatsApp.',
+      ...(isProduction ? {} : { debug_error: emailResult.error })
     });
   }
 
@@ -506,20 +713,31 @@ app.post('/api/contact', async (req, res) => {
     crmOk = false;
   }
 
+  console.log('[/api/contact] Lead procesado. event_id:', eventId, '| crmOk:', crmOk);
   res.json({ ok: true, crmOk, crmStatus, event_id: eventId, message: 'Consulta recibida correctamente.' });
 });
 
 // ── Newsletter ───────────────────────────────────────────────────────────────
 app.post('/api/newsletter', async (req, res) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ ok: false, message: 'Formato no soportado.' });
+  }
   if (!checkRate(req._clientIp, 'newsletter', 3, 60_000)) {
     return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' });
   }
 
+  // Honeypot anti-bot
+  if (isBotRequest(req.body)) {
+    return res.json({ ok: true });
+  }
+
   const email = String(req.body?.newsletter_email || req.body?.email || '').trim();
 
-  // FIX SEGURIDAD: validación de formato de email
   if (!email || !isValidEmail(email)) {
     return res.status(400).json({ ok: false, message: 'Ingresá un email válido.' });
+  }
+  if (email.length > MAX_LENGTHS.email) {
+    return res.status(400).json({ ok: false, message: 'Email inválido.' });
   }
 
   const eventId     = req.body?.event_id || createEventId('newsletter');
@@ -557,28 +775,40 @@ app.post('/api/newsletter', async (req, res) => {
   });
 
   if (!emailResult.ok) {
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    console.error('[/api/newsletter] Error de email:', emailResult.error);
     return res.status(500).json({
       ok: false,
-      message: "No pudimos procesar la suscripción. Revisá la configuración de Resend.",
-      email_error: emailResult.error
+      message: 'No pudimos procesar la suscripción. Por favor intentá de nuevo más tarde.',
+      ...(isProduction ? {} : { debug_error: emailResult.error })
     });
   }
 
-  console.log('Resultado email newsletter:', emailResult);
+  console.log('[/api/newsletter] Email enviado correctamente.');
 
   res.json({ ok: true, event_id: eventId, message: 'Suscripción recibida correctamente.' });
 });
 
 // ── Webhook genérico CRM ─────────────────────────────────────────────────────
 app.post('/api/crm-webhook', (req, res) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ ok: false, message: 'Formato no soportado.' });
+  }
+  // Rate limit
+  if (!checkRate(req._clientIp, 'crm_webhook', 60, 60_000)) {
+    return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes.' });
+  }
+
+  // Validar hash de autorización (mismo mecanismo que /api/2clics/property)
+  const hash = req.body?.hash || req.headers['x-webhook-hash'] || '';
+  if (!validateHash(hash)) {
+    return res.status(403).json({ ok: false, message: 'No autorizado.' });
+  }
+
   const eventId   = req.body?.event_id || createEventId('crm_webhook');
   const eventName = req.body?.event    || req.body?.action || 'crm_event';
 
-  console.log('CRM webhook recibido:', {
-    event_id:    eventId,
-    event:       eventName,
-    received_at: new Date().toISOString()
-  });
+  console.log('[/api/crm-webhook] Evento recibido. ID:', eventId, '| Tipo:', eventName);
 
   return res.json({ ok: true, event_id: eventId, message: 'Webhook CRM recibido correctamente.' });
 });
@@ -603,6 +833,12 @@ app.post('/api/conversions/google-offline', async (req, res) => {
     message:  'Endpoint preparado para conversiones offline de Google Ads.'
   });
 });
+
+// ── URLs limpias: servir HTML sin extensión ───────────────────────────────────
+// Express static ya resuelve "/" → index.html; estas cubren el resto.
+app.get('/propiedades',     (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'propiedades.html')));
+app.get('/propiedad',       (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'propiedad.html')));
+app.get('/gracias-consulta',(_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'gracias-consulta.html')));
 
 // ── Arranque ─────────────────────────────────────────────────────────────────
 if (require.main === module) {
