@@ -5,17 +5,17 @@
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)",              "dest": "server.js" },
-    { "src": "/sitemap\\.xml",         "dest": "server.js" },
-    { "src": "/index\\.html",          "dest": "server.js" },
-    { "src": "/propiedades\\.html",    "dest": "server.js" },
-    { "src": "/propiedad\\.html",      "dest": "server.js" },
-    { "src": "/gracias-consulta\\.html","dest": "server.js" },
-    { "src": "/propiedades",           "dest": "/public/propiedades.html" },
-    { "src": "/propiedad",             "dest": "/public/propiedad.html" },
-    { "src": "/gracias-consulta",      "dest": "/public/gracias-consulta.html" },
-    { "src": "/propiedad/(.*)",        "dest": "server.js" },
-    { "src": "/",                      "dest": "/public/index.html" },
-    { "src": "/(.*)",                  "dest": "/public/$1" }
+    { "src": "/index\\.html",            "headers": { "Location": "/"                }, "status": 301 },
+    { "src": "/propiedades\\.html",      "headers": { "Location": "/propiedades"     }, "status": 301 },
+    { "src": "/propiedad\\.html",        "headers": { "Location": "/propiedad"       }, "status": 301 },
+    { "src": "/gracias-consulta\\.html", "headers": { "Location": "/gracias-consulta"}, "status": 301 },
+    { "src": "/api/(.*)",                "dest": "server.js" },
+    { "src": "/sitemap\\.xml",           "dest": "server.js" },
+    { "src": "/propiedades",             "dest": "/public/propiedades.html" },
+    { "src": "/propiedad",               "dest": "/public/propiedad.html" },
+    { "src": "/gracias-consulta",        "dest": "/public/gracias-consulta.html" },
+    { "src": "/propiedad/(.*)",          "dest": "server.js" },
+    { "src": "/",                        "dest": "/public/index.html" },
+    { "src": "/(.*)",                    "dest": "/public/$1" }
   ]
 }
