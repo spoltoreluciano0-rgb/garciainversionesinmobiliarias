@@ -238,6 +238,15 @@
         page_location: window.location.href
       });
 
+      // Evento específico de newsletter (solo tras éxito del backend)
+      if (leadType === "newsletter") {
+        pushTrackingEvent("newsletter_signup", {
+          event_id:     result.event_id || eventId,
+          form_name:    formName,
+          page_location: window.location.href
+        });
+      }
+
       form.reset();
 
       if (leadType === "newsletter") {

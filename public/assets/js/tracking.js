@@ -214,12 +214,18 @@
 
       if (link.matches('.property-card-link, .property-card-actions a')) {
         const card = link.closest('.property-card');
-        pushEvent('select_product', {
-          product_id: card?.id?.replace('property-', '') || '',
-          product_name: card?.querySelector('.property-title')?.textContent?.trim() || '',
-          content_type: 'real_estate_property',
-          button_text: text || 'Ver ficha completa'
-        });
+        const propId   = card?.id?.replace('property-', '') || '';
+        const propName = card?.querySelector('.property-title')?.textContent?.trim() || '';
+        const propParams = {
+          property_id:   propId,
+          property_name: propName,
+          content_type:  'real_estate_property',
+          button_text:   text || 'Ver ficha completa'
+        };
+        // Evento semántico preferido (trigger GTM: select_property)
+        pushEvent('select_property', propParams);
+        // Alias ecommerce GA4
+        pushEvent('select_product', { product_id: propId, product_name: propName, ...propParams });
       }
 
       if (/agendar|asesoramiento|consulta|contacto/i.test(text) && !link.href?.includes('wa.me')) {

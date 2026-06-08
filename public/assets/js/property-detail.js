@@ -198,7 +198,13 @@
 
         if (property) {
           renderProperty(property);
+          // Evento estándar para GA4/GTM
           pushDataLayer("view_product", property);
+          // Evento semántico para triggers de GTM
+          pushDataLayer("property_view", property, {
+            content_type: "real_estate_property",
+            content_name: property.titulo || ""
+          });
           return;
         }
       } catch (_) {
@@ -369,6 +375,8 @@
               <button class="btn btn-primary" type="submit">
                 Enviar consulta
               </button>
+
+              <p class="form-legal">Al enviar este formulario aceptás que García Inversiones Inmobiliarias utilice tus datos para responder tu consulta comercial. <a href="/privacidad">Ver Política de Privacidad</a>.</p>
 
               <a
                 class="btn btn-outline property-whatsapp-btn"

@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /gracias-consulta
 Disallow: /gracias-consulta.html
 
-Sitemap: https://garciainversiones.com.ar/sitemap.xml
+Sitemap: https://www.garciainversionesinmobiliarias.com.ar/sitemap.xml

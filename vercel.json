@@ -9,11 +9,13 @@
     { "src": "/propiedades\\.html",      "headers": { "Location": "/propiedades"     }, "status": 301 },
     { "src": "/propiedad\\.html",        "headers": { "Location": "/propiedad"       }, "status": 301 },
     { "src": "/gracias-consulta\\.html", "headers": { "Location": "/gracias-consulta"}, "status": 301 },
+    { "src": "/privacidad\\.html",       "headers": { "Location": "/privacidad"      }, "status": 301 },
     { "src": "/api/(.*)",                "dest": "server.js" },
     { "src": "/sitemap\\.xml",           "dest": "server.js" },
     { "src": "/propiedades",             "dest": "/public/propiedades.html" },
     { "src": "/propiedad",               "dest": "/public/propiedad.html" },
     { "src": "/gracias-consulta",        "dest": "/public/gracias-consulta.html" },
+    { "src": "/privacidad",              "dest": "/public/privacidad.html" },
     { "src": "/propiedad/(.*)",          "dest": "server.js" },
     { "src": "/",                        "dest": "/public/index.html" },
     { "src": "/(.*)",                    "dest": "/public/$1" }

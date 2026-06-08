@@ -3,7 +3,7 @@ const fs      = require('fs');
 const path    = require('path');
 const { Resend } = require('resend');
 
-// v2.0 — newsletter email premium, clean URLs, security hardening
+// v3.0 — privacy page, GTM events, SEO canonical, 404 page, newsletter_signup event
 // ── Variables de entorno ─────────────────────────────────────────────────────
 function loadEnvFile() {
   const envPath = path.join(__dirname, '.env');
@@ -390,11 +390,14 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/sitemap.xml', (_req, res) => {
-  const base = PUBLIC_BASE_URL;
+  // Siempre usar el dominio canónico www en el sitemap
+  const base = 'https://www.garciainversionesinmobiliarias.com.ar';
+  const today = new Date().toISOString().slice(0, 10);
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${base}/propiedades</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority><lastmod>${today}</lastmod></url>
+  <url><loc>${base}/propiedades</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>
+  <url><loc>${base}/privacidad</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>`);
 });
 
