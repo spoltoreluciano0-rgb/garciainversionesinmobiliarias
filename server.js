@@ -3,6 +3,7 @@ const fs      = require('fs');
 const path    = require('path');
 const { Resend } = require('resend');
 
+// v2.0 — newsletter email premium, clean URLs, security hardening
 // ── Variables de entorno ─────────────────────────────────────────────────────
 function loadEnvFile() {
   const envPath = path.join(__dirname, '.env');
