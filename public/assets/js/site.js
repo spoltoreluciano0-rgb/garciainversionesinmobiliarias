@@ -127,9 +127,18 @@
   }
 
   // ── Timestamps anti-bot ─────────────────────────────────────────────────────
-  // Marcar cuándo se cargó la página para detectar envíos demasiado rápidos
+  // Marcar cuándo se cargó la página. Se actualiza en el primer focus real
+  // para mayor precisión y para evitar desfases por carga lenta.
   document.querySelectorAll('.js-form-loaded-at').forEach(el => {
-    if (!el.value) el.value = Date.now();
+    el.value = Date.now(); // setear en carga
+
+    const form = el.closest('form');
+    if (form) {
+      form.addEventListener('focusin', function setOnFocus() {
+        el.value = Date.now(); // actualizar al primer toque real del usuario
+        form.removeEventListener('focusin', setOnFocus); // solo una vez
+      }, { once: true });
+    }
   });
 
   // ── Formularios ─────────────────────────────────────────────────────────────

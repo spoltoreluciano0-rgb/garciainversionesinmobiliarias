@@ -409,8 +409,15 @@
     // click_whatsapp lo captura tracking.js globalmente via data-* attributes del link
 
     // Timestamp anti-bot: marcar cuándo se renderizó el formulario
+    // Se actualiza al primer focus real para mayor precisión
     document.querySelectorAll('.js-form-loaded-at').forEach(el => {
-      if (!el.value) el.value = Date.now();
+      el.value = Date.now();
+      const form = el.closest('form');
+      if (form) {
+        form.addEventListener('focusin', function setOnFocus() {
+          el.value = Date.now();
+        }, { once: true });
+      }
     });
 
     // Cloudflare Turnstile: render explícito del widget en el formulario de propiedad

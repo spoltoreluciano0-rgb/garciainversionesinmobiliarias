@@ -309,14 +309,32 @@ function isSpamContent(body = {}, userAgent = '') {
 }
 
 // ── Control de tiempo mínimo (timing check) ──────────────────────────────────
+const TIMING_MIN_MS  = 3_000;        // menos de 3 segundos → sospechoso
+const TIMING_MAX_MS  = 7_200_000;    // más de 2 horas → ignorar (sesión abandonada)
+
 function isTooFast(body = {}) {
   const raw = parseInt(body._form_loaded_at || '', 10);
-  if (!raw || isNaN(raw)) return false; // sin timestamp → no bloquear
+
+  // Sin timestamp, vacío o NaN → no bloquear (campo opcional)
+  if (!raw || isNaN(raw) || raw <= 0) return false;
+
   const elapsed = Date.now() - raw;
-  if (elapsed < 3000) {
+
+  // Negativo o futuro → desfase de reloj cliente/servidor → no bloquear, solo loguear
+  if (elapsed < 0) {
+    console.warn('[timing] Timestamp inválido o futuro (clock skew):', elapsed, 'ms — sin bloqueo');
+    return false;
+  }
+
+  // Demasiado viejo → sesión abandonada o valor corrupto → no bloquear
+  if (elapsed > TIMING_MAX_MS) return false;
+
+  // Demasiado rápido → bot probable
+  if (elapsed < TIMING_MIN_MS) {
     console.warn('[timing] Formulario enviado demasiado rápido:', elapsed, 'ms');
     return true;
   }
+
   return false;
 }
 
