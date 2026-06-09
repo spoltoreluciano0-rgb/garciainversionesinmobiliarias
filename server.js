@@ -493,6 +493,130 @@ function normalizeLeadPayload(body = {}) {
   };
 }
 
+// ── Helper HTML escaping (server-side) ──────────────────────────────────────
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ── Ruta /propiedad — sirve HTML con OG/Schema dinámico por propiedad ────────
+// Los crawlers de WhatsApp, Facebook, LinkedIn etc. no ejecutan JS.
+// Este endpoint lee propiedad.html, inyecta meta tags específicos de la
+// propiedad pedida y devuelve el HTML completo. El resto de la app sigue
+// funcionando con JS igual que antes.
+app.get('/propiedad', (req, res) => {
+  const BASE     = 'https://www.garciainversionesinmobiliarias.com.ar';
+  const id       = String(req.query.id || '').trim().slice(0, 200);
+  const htmlPath = path.join(PUBLIC_DIR, 'propiedad.html');
+
+  let html;
+  try {
+    html = fs.readFileSync(htmlPath, 'utf8');
+  } catch (e) {
+    return res.status(500).send('Error interno');
+  }
+
+  if (id) {
+    const properties = readJson(PROPERTIES_FILE, []);
+    const property   = properties.find(p =>
+      String(p.id)     === id ||
+      String(p.app_id) === id ||
+      id.startsWith(`${p.id}-`) ||
+      id.startsWith(`${p.app_id}-`)
+    );
+
+    if (property) {
+      const pageTitle  = `${property.titulo || 'Propiedad'} | García Inversiones Inmobiliarias`;
+      const rawDesc    = property.descripcion
+        ? property.descripcion.slice(0, 155)
+        : `${property.tipo || 'Propiedad'} en ${property.ubicacion || ''}. ${property.precio || ''}`.trim();
+      const pageDesc   = rawDesc.replace(/\s+/g, ' ');
+      const rawImg     = property.imagen || 'assets/propiedades/condor-resort.jpeg';
+      const pageImage  = rawImg.startsWith('http') ? rawImg : `${BASE}/${rawImg.replace(/^\//, '')}`;
+      const pageUrl    = `${BASE}/propiedad?id=${encodeURIComponent(id)}`;
+      const priceNum   = property.precio_numero || '';
+      const currency   = property.moneda || 'USD';
+
+      // Schema.org RealEstateListing + BreadcrumbList
+      const schema = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'RealEstateListing',
+            '@id': `${pageUrl}#listing`,
+            name: property.titulo || '',
+            description: pageDesc,
+            url: pageUrl,
+            image: pageImage,
+            ...(priceNum && {
+              offers: {
+                '@type': 'Offer',
+                price: priceNum,
+                priceCurrency: currency,
+                availability: 'https://schema.org/InStock'
+              }
+            }),
+            ...(property.ubicacion && {
+              locationCreated: {
+                '@type': 'Place',
+                name: property.ubicacion
+              }
+            })
+          },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Inicio',       item: `${BASE}/` },
+              { '@type': 'ListItem', position: 2, name: 'Propiedades',  item: `${BASE}/propiedades` },
+              { '@type': 'ListItem', position: 3, name: property.titulo || 'Propiedad', item: pageUrl }
+            ]
+          }
+        ]
+      };
+
+      const ogBlock = [
+        `  <!-- SEO dinámico generado por servidor para propiedad: ${escHtml(id)} -->`,
+        `  <meta property="og:type"        content="website" />`,
+        `  <meta property="og:site_name"   content="García Inversiones Inmobiliarias" />`,
+        `  <meta property="og:title"       content="${escHtml(pageTitle)}" />`,
+        `  <meta property="og:description" content="${escHtml(pageDesc)}" />`,
+        `  <meta property="og:image"       content="${escHtml(pageImage)}" />`,
+        `  <meta property="og:image:width"  content="1200" />`,
+        `  <meta property="og:image:height" content="630" />`,
+        `  <meta property="og:url"         content="${escHtml(pageUrl)}" />`,
+        `  <meta property="og:locale"      content="es_AR" />`,
+        `  <meta name="twitter:card"        content="summary_large_image" />`,
+        `  <meta name="twitter:title"       content="${escHtml(pageTitle)}" />`,
+        `  <meta name="twitter:description" content="${escHtml(pageDesc)}" />`,
+        `  <meta name="twitter:image"       content="${escHtml(pageImage)}" />`,
+        `  <script type="application/ld+json">${JSON.stringify(schema)}</script>`
+      ].join('\n');
+
+      html = html
+        .replace(
+          '<title>Ficha de propiedad | García Inversiones Inmobiliarias</title>',
+          `<title>${escHtml(pageTitle)}</title>`
+        )
+        .replace(
+          'content="Ficha completa de propiedad de García Inversiones Inmobiliarias. Consultá precio, ubicación, características y contactate directamente."',
+          `content="${escHtml(pageDesc)}"`
+        )
+        .replace(
+          'href="https://www.garciainversionesinmobiliarias.com.ar/propiedad"',
+          `href="${escHtml(pageUrl)}"`
+        )
+        .replace('</head>', `${ogBlock}\n</head>`);
+    }
+  }
+
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.type('text/html').send(html);
+});
+
 // ── Rutas API ────────────────────────────────────────────────────────────────
 
 app.get('/api/health', (_req, res) => {
@@ -500,14 +624,23 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/sitemap.xml', (_req, res) => {
-  // Siempre usar el dominio canónico www en el sitemap
-  const base = 'https://www.garciainversionesinmobiliarias.com.ar';
+  const base  = 'https://www.garciainversionesinmobiliarias.com.ar';
   const today = new Date().toISOString().slice(0, 10);
+
+  const properties = readJson(PROPERTIES_FILE, []);
+
+  const propertyUrls = properties.map(p => {
+    const id      = escHtml(encodeURIComponent(String(p.id || p.app_id || '')));
+    const lastmod = p.updated_at ? p.updated_at.slice(0, 10) : today;
+    return `  <url><loc>${base}/propiedad?id=${id}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>`;
+  }).join('\n');
+
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority><lastmod>${today}</lastmod></url>
   <url><loc>${base}/propiedades</loc><changefreq>daily</changefreq><priority>0.9</priority><lastmod>${today}</lastmod></url>
   <url><loc>${base}/privacidad</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+${propertyUrls}
 </urlset>`);
 });
 
