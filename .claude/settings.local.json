@@ -4,7 +4,10 @@
       "Bash(not exist *)",
       "mcp__Claude_Preview__preview_start",
       "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue })",
-      "PowerShell(Stop-Process -Id 7752 -Force)"
+      "PowerShell(Stop-Process -Id 7752 -Force)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

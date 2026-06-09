@@ -2362,7 +2362,28 @@ body[data-page-type="thank_you"] {
 }
 
 /* ─────────────────────────────────────────────────────────
-   35. Aviso legal bajo formularios (.form-legal)
+   35. Cloudflare Turnstile
+   ───────────────────────────────────────────────────────── */
+/* Contenedor del widget en formularios estándar */
+.turnstile-field {
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
+/* Widget compacto en newsletter (fondo oscuro) */
+.cf-turnstile--newsletter {
+  margin: 10px auto 4px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Widget en formulario de propiedad */
+.cf-turnstile--property {
+  margin: 12px 0 8px;
+}
+
+/* ─────────────────────────────────────────────────────────
+   37. Aviso legal bajo formularios (.form-legal)
    ───────────────────────────────────────────────────────── */
 .form-legal {
   font-size: 0.72rem;
@@ -2408,7 +2429,7 @@ body[data-page-type="thank_you"] {
 }
 
 /* ─────────────────────────────────────────────────────────
-   37. Página de Privacidad
+   38. Página de Privacidad
    ───────────────────────────────────────────────────────── */
 .privacy-hero {
   background: var(--navy, #0b1628);
@@ -2570,7 +2591,7 @@ body[data-page-type="thank_you"] {
 }
 
 /* ─────────────────────────────────────────────────────────
-   38. Página 404
+   39. Página 404
    ───────────────────────────────────────────────────────── */
 .error-404-section {
   background: var(--navy, #0b1628);

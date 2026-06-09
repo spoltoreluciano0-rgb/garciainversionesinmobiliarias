@@ -126,6 +126,12 @@
     })();
   }
 
+  // ── Timestamps anti-bot ─────────────────────────────────────────────────────
+  // Marcar cuándo se cargó la página para detectar envíos demasiado rápidos
+  document.querySelectorAll('.js-form-loaded-at').forEach(el => {
+    if (!el.value) el.value = Date.now();
+  });
+
   // ── Formularios ─────────────────────────────────────────────────────────────
   // NOTA: el tracking de form_start está centralizado en tracking.js
   // para evitar eventos duplicados en el dataLayer.
@@ -248,6 +254,8 @@
       }
 
       form.reset();
+      // Reset Turnstile para que el token no quede inválido si el usuario intenta de nuevo
+      if (window.turnstile) window.turnstile.reset();
 
       if (leadType === "newsletter") {
         showNewsletterSuccess(form);

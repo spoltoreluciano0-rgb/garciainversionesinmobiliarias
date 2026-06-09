@@ -376,9 +376,14 @@
                 Enviar consulta
               </button>
 
+              <!-- Timestamp anti-bot -->
+              <input type="hidden" name="_form_loaded_at" class="js-form-loaded-at" value="" />
+              <!-- Cloudflare Turnstile -->
+              <div class="cf-turnstile cf-turnstile--property" data-theme="auto" data-language="es"></div>
+
               <p class="form-legal">Al enviar este formulario aceptás que García Inversiones Inmobiliarias utilice tus datos para responder tu consulta comercial. <a href="/privacidad">Ver Política de Privacidad</a>.</p>
 
-              <a
+              <
                 class="btn btn-outline property-whatsapp-btn"
                 href="${escapeHtml(whatsappLink)}"
                 target="_blank"
@@ -402,6 +407,21 @@
     setupGallery(images);
     setupPropertyForm(property, producer);
     // click_whatsapp lo captura tracking.js globalmente via data-* attributes del link
+
+    // Timestamp anti-bot: marcar cuándo se renderizó el formulario
+    document.querySelectorAll('.js-form-loaded-at').forEach(el => {
+      if (!el.value) el.value = Date.now();
+    });
+
+    // Cloudflare Turnstile: render explícito del widget en el formulario de propiedad
+    const turnstileContainer = document.querySelector('.cf-turnstile--property');
+    if (turnstileContainer && window.turnstile) {
+      const siteKey = document.querySelector('.cf-turnstile[data-sitekey]')?.dataset?.sitekey
+        || turnstileContainer.dataset?.sitekey || '';
+      if (siteKey && siteKey !== 'TURNSTILE_SITE_KEY') {
+        window.turnstile.render(turnstileContainer, { sitekey: siteKey, theme: 'auto', language: 'es' });
+      }
+    }
   }
 
   function setupGallery(images) {
@@ -537,6 +557,8 @@
         });
 
         form.reset();
+        // Reset Turnstile para que no quede token inválido si el usuario vuelve
+        if (window.turnstile) window.turnstile.reset();
         window.location.href = "/gracias-consulta";
 
       } catch (error) {

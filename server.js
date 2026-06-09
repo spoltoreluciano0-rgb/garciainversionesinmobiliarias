@@ -24,9 +24,11 @@ app.disable('x-powered-by');
 
 const PORT           = process.env.PORT    || 3000;
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
-const CRM_HASH       = process.env.CRM_HASH || '';
-const CRM_AGENT_ID   = Number(process.env.CRM_AGENT_ID || 123);
-const CRM_MESSAGE_URL= process.env.CRM_MESSAGE_URL || 'https://api.2clics.com.ar/api/external/message';
+const CRM_HASH            = process.env.CRM_HASH || '';
+const CRM_AGENT_ID        = Number(process.env.CRM_AGENT_ID || 123);
+const CRM_MESSAGE_URL     = process.env.CRM_MESSAGE_URL || 'https://api.2clics.com.ar/api/external/message';
+const TURNSTILE_SECRET_KEY= process.env.TURNSTILE_SECRET_KEY || '';
+const TURNSTILE_VERIFY_URL= 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -81,7 +83,8 @@ app.use((req, res, next) => {
         + " https://www.googleadservices.com"
         + " https://googleads.g.doubleclick.net"
         + " https://www.google.com"
-        + " https://connect.facebook.net",
+        + " https://connect.facebook.net"
+        + " https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
@@ -96,6 +99,7 @@ app.use((req, res, next) => {
         + " https://connect.facebook.net"
         + " https://www.facebook.com"
         + " https://facebook.com"
+        + " https://challenges.cloudflare.com"
         + " https://api.2clics.com.ar",
       // iframes: Google Maps + YouTube + GTM noscript
       "frame-src"
@@ -103,7 +107,8 @@ app.use((req, res, next) => {
         + " https://maps.google.com"
         + " https://www.youtube.com"
         + " https://www.googletagmanager.com"
-        + " https://td.doubleclick.net",
+        + " https://td.doubleclick.net"
+        + " https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'"
@@ -190,7 +195,6 @@ function writeJson(filePath, data) {
   if (process.env.VERCEL) {
     // En Vercel el filesystem es read-only — los datos van solo a la DB/CRM externo
     return;
-    return;
   }
 
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -228,6 +232,92 @@ function isValidPhone(phone) {
 // Honeypot anti-bot: el campo "website" debe estar vacío (oculto para humanos, bots lo llenan)
 function isBotRequest(body = {}) {
   return typeof body.website === 'string' && body.website.length > 0;
+}
+
+// ── Cloudflare Turnstile ─────────────────────────────────────────────────────
+async function verifyTurnstile(token, ip) {
+  if (!TURNSTILE_SECRET_KEY) {
+    // Sin clave configurada: skip (útil en desarrollo local)
+    console.warn('[Turnstile] TURNSTILE_SECRET_KEY no configurada — saltando validación.');
+    return true;
+  }
+  if (!token) return false;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(TURNSTILE_VERIFY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    new URLSearchParams({ secret: TURNSTILE_SECRET_KEY, response: token, remoteip: ip || '' }),
+      signal:  controller.signal
+    });
+    clearTimeout(timer);
+    const data = await response.json();
+    if (!data.success) console.warn('[Turnstile] Falló. Códigos:', data['error-codes']);
+    return data.success === true;
+  } catch (err) {
+    // Error de red → fail open para no bloquear usuarios legítimos
+    console.error('[Turnstile] Error de red:', err.message);
+    return true;
+  }
+}
+
+// ── Filtro anti-spam por contenido ──────────────────────────────────────────
+const SPAM_PHRASES = [
+  'automated test', 'kindly disregard', 'this is a test message',
+  'seo service', 'seo services', 'buy backlinks', 'crypto', 'casino',
+  'loan offer', 'payday loan', 'viagra', 'cialis', 'free traffic',
+  'backlink', 'guest post', 'adult content', 'make money fast'
+];
+
+function isSpamContent(body = {}, userAgent = '') {
+  const combined = [
+    body.nombre, body.apellido, body.name, body.email,
+    body.telefono, body.phone, body.motivo, body.message, body.mensaje
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  // 1. Frases de spam conocidas
+  if (SPAM_PHRASES.some(p => combined.includes(p))) {
+    console.warn('[spam] Frase detectada en payload');
+    return true;
+  }
+
+  // 2. Demasiados links en el mensaje
+  const msg = String(body.message || body.mensaje || '');
+  if ((msg.match(/https?:\/\//gi) || []).length >= 3) {
+    console.warn('[spam] Demasiados links en mensaje');
+    return true;
+  }
+
+  // 3. Nombre genérico repetido (ej: "Test Test", "Xyz Xyz")
+  const n = String(body.nombre || '').trim().toLowerCase();
+  const a = String(body.apellido || '').trim().toLowerCase();
+  if (n && a && n === a && n.length > 1) {
+    console.warn('[spam] Nombre === apellido:', n);
+    return true;
+  }
+
+  // 4. User-agent ausente o claramente automatizado
+  const ua = String(userAgent || '').trim();
+  if (!ua || ua.length < 10 || /^(curl|python|java|go-http|okhttp|axios|libwww)/i.test(ua)) {
+    console.warn('[spam] User-agent sospechoso:', ua || '(vacío)');
+    return true;
+  }
+
+  return false;
+}
+
+// ── Control de tiempo mínimo (timing check) ──────────────────────────────────
+function isTooFast(body = {}) {
+  const raw = parseInt(body._form_loaded_at || '', 10);
+  if (!raw || isNaN(raw)) return false; // sin timestamp → no bloquear
+  const elapsed = Date.now() - raw;
+  if (elapsed < 3000) {
+    console.warn('[timing] Formulario enviado demasiado rápido:', elapsed, 'ms');
+    return true;
+  }
+  return false;
 }
 
 // Valores permitidos para el campo motivo del formulario de contacto
@@ -490,13 +580,24 @@ app.post('/api/contact', async (req, res) => {
   if (!req.is('application/json')) {
     return res.status(415).json({ ok: false, message: 'Formato no soportado.' });
   }
-  if (!checkRate(req._clientIp, 'contact', 5, 60_000)) {
+  // Rate limit: 5 envíos cada 15 minutos por IP
+  if (!checkRate(req._clientIp, 'contact', 5, 15 * 60_000)) {
     return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' });
   }
 
   // Honeypot: si el campo oculto "website" tiene contenido, es un bot
   if (isBotRequest(req.body)) {
-    return res.json({ ok: true }); // silencioso — no revelar que fue detectado
+    return res.json({ ok: true }); // silencioso
+  }
+
+  // Timing: formulario enviado en menos de 3 segundos → bot
+  if (isTooFast(req.body)) {
+    return res.json({ ok: true }); // silencioso
+  }
+
+  // Filtro de contenido spam
+  if (isSpamContent(req.body, req.headers['user-agent'])) {
+    return res.json({ ok: true }); // silencioso — no alertar al bot
   }
 
   const { name, nombre, apellido, phone, telefono, email, message, mensaje, motivo, property_app_id, development_app_id } = req.body || {};
@@ -540,6 +641,13 @@ app.post('/api/contact', async (req, res) => {
   // Validación de motivo contra lista permitida
   if (motivoVal && !MOTIVOS_PERMITIDOS.has(motivoVal)) {
     return res.status(400).json({ ok: false, message: 'Motivo de consulta no válido.' });
+  }
+
+  // Cloudflare Turnstile — validar token antes de procesar
+  const turnstileToken = String(req.body?.['cf-turnstile-response'] || '');
+  const turnstileOk = await verifyTurnstile(turnstileToken, req._clientIp);
+  if (!turnstileOk) {
+    return res.status(400).json({ ok: false, message: 'Verificación de seguridad fallida. Recargá la página e intentá nuevamente.' });
   }
 
   const eventId = req.body?.event_id || createEventId('lead');
@@ -728,13 +836,19 @@ app.post('/api/newsletter', async (req, res) => {
   if (!req.is('application/json')) {
     return res.status(415).json({ ok: false, message: 'Formato no soportado.' });
   }
-  if (!checkRate(req._clientIp, 'newsletter', 3, 60_000)) {
+  // Rate limit: 3 envíos cada 15 minutos por IP
+  if (!checkRate(req._clientIp, 'newsletter', 3, 15 * 60_000)) {
     return res.status(429).json({ ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' });
   }
 
   // Honeypot anti-bot
   if (isBotRequest(req.body)) {
-    return res.json({ ok: true });
+    return res.json({ ok: true }); // silencioso
+  }
+
+  // Timing: suscripción en menos de 3 segundos → bot
+  if (isTooFast(req.body)) {
+    return res.json({ ok: true }); // silencioso
   }
 
   const email = String(req.body?.newsletter_email || req.body?.email || '').trim();
@@ -744,6 +858,18 @@ app.post('/api/newsletter', async (req, res) => {
   }
   if (email.length > MAX_LENGTHS.email) {
     return res.status(400).json({ ok: false, message: 'Email inválido.' });
+  }
+
+  // Filtro spam en email de newsletter (dominios desechables, patrones sospechosos)
+  if (isSpamContent({ email }, req.headers['user-agent'])) {
+    return res.json({ ok: true }); // silencioso
+  }
+
+  // Cloudflare Turnstile — validar token antes de procesar
+  const turnstileToken = String(req.body?.['cf-turnstile-response'] || '');
+  const turnstileOk = await verifyTurnstile(turnstileToken, req._clientIp);
+  if (!turnstileOk) {
+    return res.status(400).json({ ok: false, message: 'Verificación de seguridad fallida. Recargá la página e intentá nuevamente.' });
   }
 
   const eventId     = req.body?.event_id || createEventId('newsletter');
