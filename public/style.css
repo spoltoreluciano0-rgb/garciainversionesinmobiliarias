@@ -1276,6 +1276,7 @@ body.menu-open .hdr-cta-btn {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+  position: relative; /* contiene el Turnstile off-screen */
 }
 
 .newsletter-input {
@@ -2370,11 +2371,16 @@ body[data-page-type="thank_you"] {
   margin-bottom: 4px;
 }
 
-/* Widget compacto en newsletter (fondo oscuro) */
+/* Widget newsletter: fuera de pantalla pero funcional.
+   position:absolute + off-screen es la forma segura de ocultar Turnstile
+   sin bloquear su ejecución ni la generación del token. */
 .cf-turnstile--newsletter {
-  margin: 10px auto 4px;
-  display: flex;
-  justify-content: center;
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 /* Widget en formulario de propiedad */

@@ -383,7 +383,7 @@
 
               <p class="form-legal">Al enviar este formulario aceptás que García Inversiones Inmobiliarias utilice tus datos para responder tu consulta comercial. <a href="/privacidad">Ver Política de Privacidad</a>.</p>
 
-              <
+              <a
                 class="btn btn-outline property-whatsapp-btn"
                 href="${escapeHtml(whatsappLink)}"
                 target="_blank"
