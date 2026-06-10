@@ -65,9 +65,37 @@ CREATE TABLE IF NOT EXISTS property_overrides (
 );
 
 -- ── Migraciones: agregar columnas si la tabla ya fue creada ──
--- Ejecutar solo si el schema anterior ya estaba aplicado
+-- Ejecutar este bloque en Supabase SQL Editor si el schema anterior ya estaba aplicado.
+-- Los CREATE TABLE IF NOT EXISTS ya incluyen las columnas nuevas para instalaciones frescas.
+
+-- Media manual (ya existían)
 ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS video_manual_url TEXT;
 ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS tour_manual_url  TEXT;
+
+-- Presentación web: ubicación y categoría (sobreescriben portales CRM)
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS pais_web       TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS ciudad_web     TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS ubicacion_web  TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS zona_web       TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS categoria_web  TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS tipo_web       TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS operacion_web  TEXT;
+
+-- Presentación web: contenido
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS titulo_web      TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS descripcion_web TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS bajada_web      TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS etiqueta_web    TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS destacado_web   BOOLEAN;
+
+-- Inversiones participativas / proyectos
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS ticket_minimo        TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS horizonte_inversion  TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS retorno_estimado     TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS modelo_inversion     TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS riesgo_inversion     TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS disclaimer_inversion TEXT;
+ALTER TABLE property_overrides ADD COLUMN IF NOT EXISTS mostrar_como_inversion BOOLEAN DEFAULT false;
 
 -- ── Newsletter (independiente de 2Clics) ─────────────────────
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (

@@ -82,9 +82,21 @@
     if (normalized.includes("oficina"))  return "oficinas";
     if (normalized.includes("lote") || normalized.includes("terreno")) return "lotes";
 
+    // Categorías de inversión y proyectos
+    if (
+      normalized === "inversion_internacional" ||
+      normalized.includes("inversion internacional") ||
+      normalized.includes("internacional")
+    ) return "inversion";
+    if (
+      normalized === "proyecto_inversion" ||
+      normalized.includes("participat") ||
+      normalized.includes("proyecto de inversion")
+    ) return "inversion";
+    if (normalized === "emprendimiento" || normalized.includes("emprendimiento")) return "emprendimiento";
+
     if (
       normalized.includes("proyecto") ||
-      normalized.includes("emprendimiento") ||
       normalized.includes("desarrollo")
     ) return "proyecto";
 
@@ -126,9 +138,9 @@
   }
 
   function getPropertyOperation(property) {
-    return normalizeOperation(
-      property.operacion || property.tipo || property.tag || ""
-    );
+    // categoria ya viene resuelta desde el servidor (override → CRM)
+    if (property.categoria) return normalizeOperation(property.categoria);
+    return normalizeOperation(property.operacion || property.tipo || property.tag || "");
   }
 
   function getPropertyCurrency(property) {
@@ -230,26 +242,43 @@
                 loading="lazy"
                 decoding="async"
               />
-              <span class="property-tag">${escapeHtml(property.tag || property.operacion || "Propiedad")}</span>
+              <span class="property-tag">${escapeHtml(
+                property.tag ||
+                (property.mostrar_como_inversion ? "Inversión" : "") ||
+                property.operacion ||
+                "Propiedad"
+              )}</span>
             </div>
 
             <div class="property-body">
-              ${hasDisplayValue(property.ubicacion)  ? `<div class="property-location">${escapeHtml(property.ubicacion)}</div>` : ""}
-              ${hasDisplayValue(property.titulo)     ? `<h3 class="property-title">${escapeHtml(property.titulo)}</h3>` : ""}
-              ${hasDisplayValue(property.precio)     ? `<div class="property-price">${escapeHtml(property.precio)}</div>` : ""}
-              ${hasDisplayValue(property.descripcion)? `<p class="property-text">${escapeHtml(property.descripcion)}</p>` : ""}
+              ${hasDisplayValue(property.ubicacion) ? `<div class="property-location">${escapeHtml(property.ubicacion)}</div>` : ""}
+              ${hasDisplayValue(property.titulo)    ? `<h3 class="property-title">${escapeHtml(property.titulo)}</h3>` : ""}
+              ${hasDisplayValue(property.bajada)    ? `<p class="property-bajada">${escapeHtml(property.bajada)}</p>` : ""}
 
-              ${
-                hasDisplayValue(property.ambientes) ||
-                hasDisplayValue(property.banos)     ||
-                hasDisplayValue(property.superficie)
-                  ? `
-                    <div class="property-meta">
+              ${property.mostrar_como_inversion && hasDisplayValue(property.ticket_minimo)
+                ? `<div class="property-price">Desde ${escapeHtml(property.ticket_minimo)}</div>`
+                : hasDisplayValue(property.precio)
+                  ? `<div class="property-price">${escapeHtml(property.precio)}</div>`
+                  : ""
+              }
+
+              ${!property.mostrar_como_inversion && hasDisplayValue(property.descripcion)
+                ? `<p class="property-text">${escapeHtml(property.descripcion.slice(0, 110))}${property.descripcion.length > 110 ? "…" : ""}</p>`
+                : ""
+              }
+
+              ${property.mostrar_como_inversion && hasDisplayValue(property.horizonte_inversion)
+                ? `<div class="property-meta"><span>Horizonte: ${escapeHtml(property.horizonte_inversion)}</span>${hasDisplayValue(property.retorno_estimado) ? `<span>Retorno est.: ${escapeHtml(property.retorno_estimado)}</span>` : ""}</div>`
+                : !property.mostrar_como_inversion && (
+                    hasDisplayValue(property.ambientes) ||
+                    hasDisplayValue(property.banos)     ||
+                    hasDisplayValue(property.superficie)
+                  )
+                  ? `<div class="property-meta">
                       ${hasDisplayValue(property.ambientes)  ? `<span>${escapeHtml(property.ambientes)}</span>` : ""}
                       ${hasDisplayValue(property.banos)      ? `<span>${escapeHtml(property.banos)}</span>` : ""}
                       ${hasDisplayValue(property.superficie) ? `<span>${escapeHtml(property.superficie)}</span>` : ""}
-                    </div>
-                  `
+                    </div>`
                   : ""
               }
             </div>

@@ -100,11 +100,25 @@
   function getDetailRows(property) {
     const raw = property.raw || {};
 
+    if (property.mostrar_como_inversion) {
+      return [
+        ["Ticket mínimo",      property.ticket_minimo],
+        ["Modelo",             property.modelo_inversion],
+        ["Horizonte estimado", property.horizonte_inversion],
+        ["Retorno estimado",   property.retorno_estimado],
+        ["Riesgo",             property.riesgo_inversion],
+        ["Ubicación",          property.ubicacion],
+        ["País",               property.pais],
+        ["Código",             property.crm_code || property.app_id || property.id]
+      ].filter(([, value]) => value && value !== "null");
+    }
+
     return [
       ["Valor",              property.precio],
       ["Operación",          property.operacion],
       ["Tipo",               property.tipo],
       ["Ubicación",          property.ubicacion],
+      ["País",               property.pais],
       ["Ambientes",          property.ambientes || raw.ambientes_propiedad],
       ["Dormitorios",        raw.dormitorios],
       ["Baños",              property.banos || raw.banos],
@@ -342,12 +356,16 @@
         <div class="container property-detail-hero-inner">
           <div>
             <span class="eyebrow">
-              ${escapeHtml(property.tag || property.operacion || "Propiedad")}
+              ${escapeHtml(property.tag || (property.mostrar_como_inversion ? "Inversión" : property.operacion) || "Propiedad")}
             </span>
 
             <h1 class="property-detail-title">
               ${escapeHtml(property.titulo || "Propiedad destacada")}
             </h1>
+
+            ${property.bajada
+              ? `<p class="property-detail-bajada">${escapeHtml(property.bajada)}</p>`
+              : ""}
 
             <p class="property-detail-location">
               ${escapeHtml(property.ubicacion || "Ubicación a consultar")}
@@ -392,11 +410,24 @@
             <div class="property-gallery"></div>
 
             <article class="property-info-card">
-              <span class="eyebrow">Sobre la propiedad</span>
-              <h2>Información sobre la propiedad</h2>
+              <span class="eyebrow">${property.mostrar_como_inversion ? "Sobre la oportunidad" : "Sobre la propiedad"}</span>
+              <h2>${property.mostrar_como_inversion ? "Descripción de la inversión" : "Información sobre la propiedad"}</h2>
               <p>
                 ${escapeHtml(property.descripcion || "Consultanos para recibir información completa sobre esta propiedad.")}
               </p>
+
+              ${property.mostrar_como_inversion && property.ticket_minimo ? `
+              <div class="inversion-highlights">
+                ${property.ticket_minimo       ? `<div class="inversion-highlight-item"><small>Ticket mínimo</small><strong>${escapeHtml(property.ticket_minimo)}</strong></div>` : ""}
+                ${property.horizonte_inversion ? `<div class="inversion-highlight-item"><small>Horizonte estimado</small><strong>${escapeHtml(property.horizonte_inversion)}</strong></div>` : ""}
+                ${property.retorno_estimado    ? `<div class="inversion-highlight-item"><small>Retorno estimado</small><strong>${escapeHtml(property.retorno_estimado)}</strong></div>` : ""}
+                ${property.modelo_inversion    ? `<div class="inversion-highlight-item"><small>Modelo</small><strong>${escapeHtml(property.modelo_inversion)}</strong></div>` : ""}
+              </div>` : ""}
+
+              ${property.mostrar_como_inversion && property.disclaimer_inversion ? `
+              <p class="inversion-disclaimer">
+                <small>${escapeHtml(property.disclaimer_inversion)}</small>
+              </p>` : ""}
             </article>
 
             ${

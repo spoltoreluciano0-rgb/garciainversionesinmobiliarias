@@ -510,43 +510,67 @@ function normalizeDbRow(row) {
     app_id:          row.crm_app_id || row.id,
     crm_app_id:      row.crm_app_id || '',
     crm_code:        row.crm_code   || '',
-    estado:          row.estado     || 'activa',
-    titulo:          row.titulo     || 'Propiedad sin título',
-    descripcion:     row.descripcion|| '',
-    operacion:       row.operacion  || '',
-    tipo:            row.tipo       || '',
-    precio:          row.precio     || 'Consultar',
-    precio_numero:   row.precio_numero ?? null,
-    moneda:          row.moneda     || 'USD',
-    pais:            row.pais       || '',
-    ubicacion:       row.ubicacion  || '',
-    imagen:          row.imagen     || '',
-    ambientes:       row.ambientes  || '',
-    banos:           row.banos      || '',
-    superficie:      row.superficie || '',
-    dormitorios:     row.dormitorios  ?? null,
-    tag:             row.tag        || '',
-    prop_featured:   row.prop_featured || false,
-    linkWhatsapp:    row.link_whatsapp     || '',
-    linkMercadoLibre:row.link_mercado_libre|| '',
-    linkZonaprop:    row.link_zonaprop    || '',
-    video:           row.video      || '',
-    tour:            row.tour       || '',
-    productorNombre: row.productor_nombre || '',
-    productorEmail:  row.productor_email  || '',
-    amenities:       Array.isArray(row.amenities) ? row.amenities : [],
-    // Campos manuales — vienen de property_overrides, CRM no los puede tocar
+    estado: row.estado || 'activa',
+
+    // ── Campos con prioridad override web → CRM ───────────────────────────────
+    // El CRM sigue siendo la fuente de datos operativos (portales).
+    // Los overrides definen cómo se presenta cada propiedad en la web propia.
+    titulo:      ov.titulo_web      || row.titulo      || 'Propiedad sin título',
+    descripcion: ov.descripcion_web || row.descripcion || '',
+    operacion:   ov.operacion_web   || row.operacion   || '',
+    tipo:        ov.tipo_web        || row.tipo         || '',
+    pais:        ov.pais_web        || row.pais         || '',
+    ubicacion:   ov.ubicacion_web   || row.ubicacion    || '',
+    tag:         ov.etiqueta_web    || row.tag          || '',
+    prop_featured: (ov.destacado_web !== null && ov.destacado_web !== undefined)
+      ? ov.destacado_web
+      : (row.prop_featured || false),
+
+    // ── Campos solo del CRM (no tienen override web) ──────────────────────────
+    precio:        row.precio       || 'Consultar',
+    precio_numero: row.precio_numero ?? null,
+    moneda:        row.moneda       || 'USD',
+    imagen:        row.imagen       || '',
+    ambientes:     row.ambientes    || '',
+    banos:         row.banos        || '',
+    superficie:    row.superficie   || '',
+    dormitorios:   row.dormitorios  ?? null,
+    linkWhatsapp:     row.link_whatsapp      || '',
+    linkMercadoLibre: row.link_mercado_libre || '',
+    linkZonaprop:     row.link_zonaprop      || '',
+    productorNombre:  row.productor_nombre   || '',
+    productorEmail:   row.productor_email    || '',
+    amenities: Array.isArray(row.amenities) ? row.amenities : [],
+
+    // ── Media manual — CRM nunca los toca ────────────────────────────────────
     imagen_manual:    ov.imagen_manual    || null,
     og_image_manual:  ov.og_image_manual  || null,
     galeria_manual:   Array.isArray(ov.galeria_manual) ? ov.galeria_manual : [],
     video_manual_url: sanitizeVideoUrl(ov.video_manual_url || ''),
     tour_manual_url:  sanitizeVideoUrl(ov.tour_manual_url  || ''),
-    seo_title:        ov.seo_title        || null,
-    seo_description:  ov.seo_description  || null,
-    // Campos resueltos con prioridad manual → CRM (lo que usa property-detail.js)
+
+    // ── Campos resueltos: prioridad override → CRM ────────────────────────────
     video: sanitizeVideoUrl(ov.video_manual_url || row.video || ''),
     tour:  sanitizeVideoUrl(ov.tour_manual_url  || row.tour  || ''),
-    // raw: compatibilidad con property-detail.js (usa raw.imagenes_propiedad, raw.dormitorios, etc.)
+
+    // ── SEO ───────────────────────────────────────────────────────────────────
+    seo_title:       ov.seo_title       || null,
+    seo_description: ov.seo_description || null,
+
+    // ── Presentación de inversiones participativas ────────────────────────────
+    // Solo se usan cuando el equipo de García configura la propiedad como inversión.
+    bajada:                ov.bajada_web              || '',
+    categoria:             ov.categoria_web           || '',
+    zona_web:              ov.zona_web                || '',
+    mostrar_como_inversion:ov.mostrar_como_inversion  || false,
+    ticket_minimo:         ov.ticket_minimo           || '',
+    horizonte_inversion:   ov.horizonte_inversion     || '',
+    retorno_estimado:      ov.retorno_estimado        || '',
+    modelo_inversion:      ov.modelo_inversion        || '',
+    riesgo_inversion:      ov.riesgo_inversion        || '',
+    disclaimer_inversion:  ov.disclaimer_inversion    || '',
+
+    // ── raw: compatibilidad con property-detail.js ────────────────────────────
     raw: { ...sourceRaw, imagenes_propiedad: imagesCrm },
     updated_at: row.updated_at || new Date().toISOString(),
     created_at: row.created_at || new Date().toISOString(),
@@ -705,9 +729,20 @@ async function dbInsertNewsletter({ email, origen = '', utm_source = '', utm_med
 // en el webhook hace { ...existing, ...mapped } preservando los del JSON.
 // Todos los campos de property_overrides — el CRM nunca puede sobreescribirlos
 const MANUAL_ONLY_FIELDS = new Set([
+  // media manual
   'imagen_manual', 'og_image_manual', 'galeria_manual',
   'video_manual_url', 'tour_manual_url',
-  'seo_title', 'seo_description'
+  // presentación web: ubicación y categoría
+  'pais_web', 'ciudad_web', 'ubicacion_web', 'zona_web',
+  'categoria_web', 'tipo_web', 'operacion_web',
+  // presentación web: contenido
+  'titulo_web', 'descripcion_web', 'bajada_web', 'etiqueta_web', 'destacado_web',
+  // SEO
+  'seo_title', 'seo_description',
+  // inversiones participativas
+  'ticket_minimo', 'horizonte_inversion', 'retorno_estimado',
+  'modelo_inversion', 'riesgo_inversion', 'disclaimer_inversion',
+  'mostrar_como_inversion',
 ]);
 
 function crmToWebProperty(prop) {
