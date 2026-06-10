@@ -520,98 +520,122 @@ app.get('/propiedad', (req, res) => {
     return res.status(500).send('Error interno');
   }
 
-  if (id) {
-    const properties = readJson(PROPERTIES_FILE, []);
-    const property   = properties.find(p =>
-      String(p.id)     === id ||
-      String(p.app_id) === id ||
-      id.startsWith(`${p.id}-`) ||
-      id.startsWith(`${p.app_id}-`)
+  // Construir OG/Schema: dinámico si hay propiedad, fallback genérico si no
+  const FALLBACK_IMG = `${BASE}/assets/propiedades/condor-resort.jpeg`;
+  let ogBlock = '';
+
+  const properties = id ? readJson(PROPERTIES_FILE, []) : [];
+  const property   = properties.find(p =>
+    String(p.id)     === id ||
+    String(p.app_id) === id ||
+    (id && (id.startsWith(`${p.id}-`) || id.startsWith(`${p.app_id}-`)))
+  );
+
+  if (property) {
+    // ── OG dinámico: datos reales de la propiedad ─────────────────────────────
+    const pageTitle = `${property.titulo || 'Propiedad'} | García Inversiones Inmobiliarias`;
+    const rawDesc   = property.descripcion
+      ? property.descripcion.slice(0, 155)
+      : `${[property.tipo, property.operacion, property.ubicacion].filter(Boolean).join(' · ')}. ${property.precio || ''}`.trim();
+    const pageDesc  = rawDesc.replace(/\s+/g, ' ').trim();
+    const rawImg    = property.imagen || '';
+    const pageImage = rawImg
+      ? (rawImg.startsWith('http') ? rawImg : `${BASE}/${rawImg.replace(/^\//, '')}`)
+      : FALLBACK_IMG;
+    const pageUrl   = `${BASE}/propiedad?id=${encodeURIComponent(id)}`;
+    const priceNum  = property.precio_numero || '';
+    const currency  = property.moneda || 'USD';
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'RealEstateListing',
+          '@id': `${pageUrl}#listing`,
+          name: property.titulo || '',
+          description: pageDesc,
+          url: pageUrl,
+          image: pageImage,
+          ...(priceNum && {
+            offers: {
+              '@type': 'Offer',
+              price: priceNum,
+              priceCurrency: currency,
+              availability: 'https://schema.org/InStock'
+            }
+          }),
+          ...(property.ubicacion && {
+            locationCreated: { '@type': 'Place', name: property.ubicacion }
+          })
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Inicio',      item: `${BASE}/` },
+            { '@type': 'ListItem', position: 2, name: 'Propiedades', item: `${BASE}/propiedades` },
+            { '@type': 'ListItem', position: 3, name: property.titulo || 'Propiedad', item: pageUrl }
+          ]
+        }
+      ]
+    };
+
+    html = html
+      .replace(
+        '<title>Ficha de propiedad | García Inversiones Inmobiliarias</title>',
+        `<title>${escHtml(pageTitle)}</title>`
+      )
+      .replace(
+        'content="Ficha completa de propiedad de García Inversiones Inmobiliarias. Consultá precio, ubicación, características y contactate directamente."',
+        `content="${escHtml(pageDesc)}"`
+      );
+
+    // Canonical dinámico
+    html = html.replace(
+      /<!-- SEO Canonical.*?-->/s,
+      `<link rel="canonical" href="${escHtml(pageUrl)}" />`
     );
 
-    if (property) {
-      const pageTitle  = `${property.titulo || 'Propiedad'} | García Inversiones Inmobiliarias`;
-      const rawDesc    = property.descripcion
-        ? property.descripcion.slice(0, 155)
-        : `${property.tipo || 'Propiedad'} en ${property.ubicacion || ''}. ${property.precio || ''}`.trim();
-      const pageDesc   = rawDesc.replace(/\s+/g, ' ');
-      const rawImg     = property.imagen || 'assets/propiedades/condor-resort.jpeg';
-      const pageImage  = rawImg.startsWith('http') ? rawImg : `${BASE}/${rawImg.replace(/^\//, '')}`;
-      const pageUrl    = `${BASE}/propiedad?id=${encodeURIComponent(id)}`;
-      const priceNum   = property.precio_numero || '';
-      const currency   = property.moneda || 'USD';
+    ogBlock = [
+      `  <!-- OG dinámico: ${escHtml(id)} -->`,
+      `  <meta property="og:type"         content="website" />`,
+      `  <meta property="og:site_name"    content="García Inversiones Inmobiliarias" />`,
+      `  <meta property="og:title"        content="${escHtml(pageTitle)}" />`,
+      `  <meta property="og:description"  content="${escHtml(pageDesc)}" />`,
+      `  <meta property="og:image"        content="${escHtml(pageImage)}" />`,
+      `  <meta property="og:image:width"  content="1200" />`,
+      `  <meta property="og:image:height" content="630" />`,
+      `  <meta property="og:url"          content="${escHtml(pageUrl)}" />`,
+      `  <meta property="og:locale"       content="es_AR" />`,
+      `  <meta name="twitter:card"        content="summary_large_image" />`,
+      `  <meta name="twitter:title"       content="${escHtml(pageTitle)}" />`,
+      `  <meta name="twitter:description" content="${escHtml(pageDesc)}" />`,
+      `  <meta name="twitter:image"       content="${escHtml(pageImage)}" />`,
+      `  <script type="application/ld+json">${JSON.stringify(schema)}</script>`
+    ].join('\n');
 
-      // Schema.org RealEstateListing + BreadcrumbList
-      const schema = {
-        '@context': 'https://schema.org',
-        '@graph': [
-          {
-            '@type': 'RealEstateListing',
-            '@id': `${pageUrl}#listing`,
-            name: property.titulo || '',
-            description: pageDesc,
-            url: pageUrl,
-            image: pageImage,
-            ...(priceNum && {
-              offers: {
-                '@type': 'Offer',
-                price: priceNum,
-                priceCurrency: currency,
-                availability: 'https://schema.org/InStock'
-              }
-            }),
-            ...(property.ubicacion && {
-              locationCreated: {
-                '@type': 'Place',
-                name: property.ubicacion
-              }
-            })
-          },
-          {
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Inicio',       item: `${BASE}/` },
-              { '@type': 'ListItem', position: 2, name: 'Propiedades',  item: `${BASE}/propiedades` },
-              { '@type': 'ListItem', position: 3, name: property.titulo || 'Propiedad', item: pageUrl }
-            ]
-          }
-        ]
-      };
-
-      const ogBlock = [
-        `  <!-- SEO dinámico generado por servidor para propiedad: ${escHtml(id)} -->`,
-        `  <meta property="og:type"        content="website" />`,
-        `  <meta property="og:site_name"   content="García Inversiones Inmobiliarias" />`,
-        `  <meta property="og:title"       content="${escHtml(pageTitle)}" />`,
-        `  <meta property="og:description" content="${escHtml(pageDesc)}" />`,
-        `  <meta property="og:image"       content="${escHtml(pageImage)}" />`,
-        `  <meta property="og:image:width"  content="1200" />`,
-        `  <meta property="og:image:height" content="630" />`,
-        `  <meta property="og:url"         content="${escHtml(pageUrl)}" />`,
-        `  <meta property="og:locale"      content="es_AR" />`,
-        `  <meta name="twitter:card"        content="summary_large_image" />`,
-        `  <meta name="twitter:title"       content="${escHtml(pageTitle)}" />`,
-        `  <meta name="twitter:description" content="${escHtml(pageDesc)}" />`,
-        `  <meta name="twitter:image"       content="${escHtml(pageImage)}" />`,
-        `  <script type="application/ld+json">${JSON.stringify(schema)}</script>`
-      ].join('\n');
-
-      html = html
-        .replace(
-          '<title>Ficha de propiedad | García Inversiones Inmobiliarias</title>',
-          `<title>${escHtml(pageTitle)}</title>`
-        )
-        .replace(
-          'content="Ficha completa de propiedad de García Inversiones Inmobiliarias. Consultá precio, ubicación, características y contactate directamente."',
-          `content="${escHtml(pageDesc)}"`
-        )
-        .replace(
-          'href="https://www.garciainversionesinmobiliarias.com.ar/propiedad"',
-          `href="${escHtml(pageUrl)}"`
-        )
-        .replace('</head>', `${ogBlock}\n</head>`);
-    }
+  } else {
+    // ── OG fallback genérico (sin ?id= o propiedad no encontrada) ─────────────
+    const pageUrl = `${BASE}/propiedades`;
+    ogBlock = [
+      `  <!-- OG fallback genérico -->`,
+      `  <link rel="canonical" href="${BASE}/propiedad" />`,
+      `  <meta property="og:type"         content="website" />`,
+      `  <meta property="og:site_name"    content="García Inversiones Inmobiliarias" />`,
+      `  <meta property="og:title"        content="Propiedades | García Inversiones Inmobiliarias" />`,
+      `  <meta property="og:description"  content="Propiedades seleccionadas en Argentina, USA, Dubái, México, Uruguay y España." />`,
+      `  <meta property="og:image"        content="${FALLBACK_IMG}" />`,
+      `  <meta property="og:image:width"  content="1200" />`,
+      `  <meta property="og:image:height" content="630" />`,
+      `  <meta property="og:url"          content="${escHtml(pageUrl)}" />`,
+      `  <meta property="og:locale"       content="es_AR" />`,
+      `  <meta name="twitter:card"        content="summary_large_image" />`,
+      `  <meta name="twitter:title"       content="Propiedades | García Inversiones Inmobiliarias" />`,
+      `  <meta name="twitter:description" content="Propiedades seleccionadas en Argentina, USA, Dubái, México, Uruguay y España." />`,
+      `  <meta name="twitter:image"       content="${FALLBACK_IMG}" />`
+    ].join('\n');
   }
+
+  html = html.replace('</head>', `${ogBlock}\n</head>`);
 
   res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.type('text/html').send(html);

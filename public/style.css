@@ -2645,3 +2645,116 @@ body[data-page-type="thank_you"] {
     padding: 80px 0 40px;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   41. Skeleton loader — ficha de propiedad
+   ───────────────────────────────────────────────────────── */
+@keyframes skel-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skel {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
+  background-size: 800px 100%;
+  animation: skel-shimmer 1.4s infinite linear;
+}
+
+.property-skeleton-hero { background: var(--navy, #0d1b2a); min-height: 240px; display: flex; align-items: center; }
+.property-skeleton-hero-content { width: 100%; max-width: 600px; padding: 40px 0; }
+.skel-eyebrow  { height: 14px; width: 80px;  margin-bottom: 20px; }
+.skel-title    { height: 36px; width: 65%;   margin-bottom: 16px; }
+.skel-subtitle { height: 18px; width: 40%; }
+
+.skel-gallery  { height: 420px; border-radius: 12px; margin-bottom: 24px;
+                 background: linear-gradient(90deg, #ddd 25%, #eee 50%, #ddd 75%);
+                 background-size: 800px 100%;
+                 animation: skel-shimmer 1.4s infinite linear; }
+
+.skel-text         { height: 14px; margin-bottom: 12px; }
+.skel-text--short  { width: 55%; }
+
+.property-skeleton-aside .skel-aside-title { height: 22px; width: 70%; margin-bottom: 16px; }
+.property-skeleton-aside .skel-aside-body  { height: 14px; margin-bottom: 10px; }
+.property-skeleton-aside .skel-aside-btn   { height: 48px; border-radius: 8px; margin-top: 24px; }
+
+/* ─────────────────────────────────────────────────────────
+   42. Botón compartir propiedad
+   ───────────────────────────────────────────────────────── */
+.property-share-wrapper {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.property-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.property-share-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.6);
+}
+
+.property-share-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+  z-index: 200;
+  overflow: hidden;
+  padding: 6px 0;
+}
+
+.share-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 18px;
+  background: none;
+  border: none;
+  color: var(--navy, #0d1b2a);
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.share-menu-item:hover { background: #f5f5f5; }
+
+.property-detail-hero-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .property-share-wrapper { margin-left: 0; width: 100%; }
+  .property-share-btn      { width: 100%; justify-content: center; }
+  .property-share-menu     { right: auto; left: 0; width: 100%; }
+}
