@@ -17,17 +17,22 @@
       .replace(/'/g, "&#039;");
   }
 
+  const FALLBACK_IMAGE = 'assets/propiedades/condor-resort.jpeg';
+
   function normalizeImages(property) {
-    const rawImages = Array.isArray(property.raw?.imagenes_propiedad)
+    // Prioridad: galería manual → imagen manual → imagen CRM principal → imágenes CRM → galería local → fallback institucional
+    const manualGallery = Array.isArray(property.galeria_manual)
+      ? property.galeria_manual.filter(Boolean)
+      : [];
+    const manualMain  = property.imagen_manual ? [property.imagen_manual] : [];
+    const crmMain     = property.imagen        ? [property.imagen]        : [];
+    const crmGallery  = Array.isArray(property.raw?.imagenes_propiedad)
       ? property.raw.imagenes_propiedad.map(img => img?.source).filter(Boolean)
       : [];
+    const localGallery = Array.isArray(property.imagenes) ? property.imagenes.filter(Boolean) : [];
 
-    const localImages = [
-      property.imagen,
-      ...(Array.isArray(property.imagenes) ? property.imagenes : [])
-    ].filter(Boolean);
-
-    return [...new Set([...localImages, ...rawImages])].slice(0, 20);
+    const all = [...new Set([...manualGallery, ...manualMain, ...crmMain, ...crmGallery, ...localGallery])];
+    return all.length ? all.slice(0, 20) : [FALLBACK_IMAGE];
   }
 
   function getDetailRows(property) {
@@ -508,6 +513,7 @@
           src="${escapeHtml(images[0])}"
           alt="Imagen propiedad"
           draggable="false"
+          onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"
         />
 
         <button class="gallery-arrow gallery-next" id="galleryNext" type="button" aria-label="Imagen siguiente">
@@ -528,6 +534,7 @@
     function updateImage() {
       mainImage.style.opacity = "0";
       setTimeout(() => {
+        mainImage.onerror = function () { this.onerror = null; this.src = FALLBACK_IMAGE; };
         mainImage.src = images[currentIndex];
         if (currentCounter) currentCounter.textContent = currentIndex + 1;
         mainImage.style.opacity = "1";

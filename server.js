@@ -362,10 +362,23 @@ function normalizeOperation(operation = '') {
   return 'proyecto';
 }
 
+const INSTITUTIONAL_FALLBACK = 'assets/propiedades/condor-resort.jpeg';
+
 function getFeaturedImage(prop) {
+  // Prioridad: manual principal → CRM destacada → primera CRM → galería manual → fallback
+  if (prop.imagen_manual) return prop.imagen_manual;
   const images  = Array.isArray(prop.imagenes_propiedad) ? prop.imagenes_propiedad : [];
   const featured = images.find(img => img && img.featured_image) || images[0];
-  return featured?.source || 'assets/propiedades/condor-resort.jpeg';
+  if (featured?.source) return featured.source;
+  if (Array.isArray(prop.galeria_manual) && prop.galeria_manual[0]) return prop.galeria_manual[0];
+  return INSTITUTIONAL_FALLBACK;
+}
+
+function resolveOgImage(property, BASE) {
+  // Prioridad OG: og_image_manual → imagen_manual → imagen CRM → fallback institucional
+  const raw = property.og_image_manual || property.imagen_manual || property.imagen || '';
+  if (!raw) return `${BASE}/${INSTITUTIONAL_FALLBACK}`;
+  return raw.startsWith('http') ? raw : `${BASE}/${raw.replace(/^\//, '')}`;
 }
 
 function formatPrice(prop) {
@@ -521,7 +534,7 @@ app.get('/propiedad', (req, res) => {
   }
 
   // Construir OG/Schema: dinámico si hay propiedad, fallback genérico si no
-  const FALLBACK_IMG = `${BASE}/assets/propiedades/condor-resort.jpeg`;
+  const FALLBACK_IMG = `${BASE}/${INSTITUTIONAL_FALLBACK}`;
   let ogBlock = '';
 
   const properties = id ? readJson(PROPERTIES_FILE, []) : [];
@@ -538,10 +551,7 @@ app.get('/propiedad', (req, res) => {
       ? property.descripcion.slice(0, 155)
       : `${[property.tipo, property.operacion, property.ubicacion].filter(Boolean).join(' · ')}. ${property.precio || ''}`.trim();
     const pageDesc  = rawDesc.replace(/\s+/g, ' ').trim();
-    const rawImg    = property.imagen || '';
-    const pageImage = rawImg
-      ? (rawImg.startsWith('http') ? rawImg : `${BASE}/${rawImg.replace(/^\//, '')}`)
-      : FALLBACK_IMG;
+    const pageImage = resolveOgImage(property, BASE);
     const pageUrl   = `${BASE}/propiedad?id=${encodeURIComponent(id)}`;
     const priceNum  = property.precio_numero || '';
     const currency  = property.moneda || 'USD';
