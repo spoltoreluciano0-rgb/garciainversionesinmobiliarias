@@ -37,7 +37,7 @@ app.disable('x-powered-by');
 const PORT           = process.env.PORT    || 3000;
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const CRM_HASH            = process.env.CRM_HASH || '';
-const CRM_AGENT_ID        = Number(process.env.CRM_AGENT_ID || 123);
+const CRM_AGENT_ID        = Number(process.env.CRM_AGENT_ID || 0);
 const CRM_MESSAGE_URL     = process.env.CRM_MESSAGE_URL || 'https://api.2clics.com.ar/api/external/message';
 const TURNSTILE_SECRET_KEY= process.env.TURNSTILE_SECRET_KEY || '';
 const TURNSTILE_VERIFY_URL= 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -73,6 +73,9 @@ setInterval(() => {
 }, 600_000);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
+// Payload limits: webhook CRM admite hasta 50kb (propiedad con muchas imágenes);
+// todos los demás endpoints mantienen 10kb.
+app.use('/api/2clics', express.json({ limit: '50kb' }));
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
@@ -700,7 +703,12 @@ async function dbInsertNewsletter({ email, origen = '', utm_source = '', utm_med
 // Campos manuales que el CRM NUNCA debe poder sobreescribir.
 // Aunque vengan en el payload se ignoran en crmToWebProperty y el merge
 // en el webhook hace { ...existing, ...mapped } preservando los del JSON.
-const MANUAL_ONLY_FIELDS = new Set(['imagen_manual', 'og_image_manual', 'galeria_manual']);
+// Todos los campos de property_overrides — el CRM nunca puede sobreescribirlos
+const MANUAL_ONLY_FIELDS = new Set([
+  'imagen_manual', 'og_image_manual', 'galeria_manual',
+  'video_manual_url', 'tour_manual_url',
+  'seo_title', 'seo_description'
+]);
 
 function crmToWebProperty(prop) {
   const appId         = String(prop.app_id || prop.id_prop_houzez_cli || prop.codigo_propiedad || Date.now());
@@ -1019,17 +1027,11 @@ app.get('/api/properties/:id', async (req, res) => {
   res.json(property);
 });
 
-app.get('/propiedad/:id', (req, res) => {
-  const properties  = readJson(PROPERTIES_FILE, []);
-  const requestedId = String(req.params.id || '');
-  const property    = properties.find(item =>
-    String(item.id)     === requestedId ||
-    String(item.app_id) === requestedId ||
-    requestedId.startsWith(`${item.id}-`) ||
-    requestedId.startsWith(`${item.app_id}-`)
-  );
-  if (!property) return res.redirect('/propiedades.html');
-  return res.redirect(`/propiedad.html?id=${encodeURIComponent(property.id)}`);
+app.get('/propiedad/:id', async (req, res) => {
+  const requestedId = String(req.params.id || '').slice(0, 200);
+  const property    = await dbGetProperty(requestedId);
+  if (!property) return res.redirect('/propiedades');
+  return res.redirect(301, `/propiedad?id=${encodeURIComponent(property.id)}`);
 });
 
 // ── Webhook CRM 2Clics ───────────────────────────────────────────────────────
@@ -1195,9 +1197,15 @@ app.post('/api/contact', async (req, res) => {
   const propId = property_app_id     ? Number(property_app_id)     : null;
   const devId  = development_app_id  ? Number(development_app_id)  : null;
 
-  if (propId && !isNaN(propId) && propId > 0)      crmPayload.property_app_id     = propId;
-  else if (devId && !isNaN(devId) && devId > 0)    crmPayload.development_app_id  = devId;
-  else                                              crmPayload.agent               = CRM_AGENT_ID;
+  if (propId && !isNaN(propId) && propId > 0)   crmPayload.property_app_id    = propId;
+  else if (devId && !isNaN(devId) && devId > 0) crmPayload.development_app_id = devId;
+  else {
+    if (!CRM_AGENT_ID) {
+      console.error('[/api/contact] CRM_AGENT_ID no configurado — lead general rechazado.');
+      return res.status(500).json({ ok: false, message: 'No pudimos procesar tu consulta. Por favor intentá de nuevo más tarde.' });
+    }
+    crmPayload.agent = CRM_AGENT_ID;
+  }
 
   // Fallback local solo en desarrollo (Vercel no persiste JSON)
   if (!process.env.VERCEL) {
@@ -1447,7 +1455,9 @@ app.post('/api/crm-webhook', (req, res) => {
   }
 
   const eventId   = req.body?.event_id || createEventId('crm_webhook');
-  const eventName = req.body?.event    || req.body?.action || 'crm_event';
+  // sanitizar: solo alfanumérico+guion, máx 50 chars para evitar log injection
+  const eventName = String(req.body?.event || req.body?.action || 'crm_event')
+    .replace(/[^a-zA-Z0-9_\-]/g, '').slice(0, 50);
 
   console.log('[/api/crm-webhook] Evento recibido. ID:', eventId, '| Tipo:', eventName);
 
