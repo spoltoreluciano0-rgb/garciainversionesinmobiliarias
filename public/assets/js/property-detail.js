@@ -603,8 +603,10 @@
       });
     }
 
-    // Mobile: Web Share API
-    if (navigator.share) {
+    // Web Share API solo en mobile real (Chrome desktop también la soporta pero da mala UX)
+    const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.innerWidth < 768);
+    if (navigator.share && isMobileDevice) {
       btn.addEventListener('click', async () => {
         try {
           await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
