@@ -2850,16 +2850,15 @@ body[data-page-type="thank_you"] {
     position: relative;
   }
 
-  /* Título centrado, ocupa todo el ancho disponible */
   .property-detail-hero--compact .property-detail-hero-inner {
     flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     position: relative;
   }
 
   .property-detail-hero--compact .property-detail-hero-text {
-    text-align: center;
+    text-align: left;
     padding-right: 48px; /* espacio para el ícono */
   }
 
@@ -2867,7 +2866,7 @@ body[data-page-type="thank_you"] {
   .property-detail-hero--compact .property-detail-title,
   body[data-page-type="property_detail"] .property-detail-hero--compact .property-detail-title {
     font-size: 1rem !important;
-    text-align: center;
+    text-align: left;
   }
 
   /* Ícono cuadrado pequeño, posición absoluta a la derecha */
