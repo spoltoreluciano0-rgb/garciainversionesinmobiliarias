@@ -1494,10 +1494,13 @@ a.footer-contact-item:hover { color: var(--gold); }
 .property-detail-hero--compact,
 body[data-page-type="property_detail"] .property-detail-hero--compact {
   padding: 14px 0 12px !important;
+  position: relative;
 }
 .property-detail-hero--compact .property-detail-hero-inner {
-  justify-content: space-between;
-  align-items: center;
+  justify-content: center;
+}
+.property-detail-hero--compact .property-detail-hero-text {
+  text-align: center;
 }
 .property-detail-hero--compact .property-detail-title,
 body[data-page-type="property_detail"] .property-detail-hero--compact .property-detail-title {
@@ -1509,13 +1512,12 @@ body[data-page-type="property_detail"] .property-detail-hero--compact .property-
   font-size: 0.6rem;
   margin-bottom: 4px;
 }
-/* Share button fijo alineado al centro vertical del navbar */
+/* Share button alineado a la derecha del hero, mismo right que ← Propiedades */
 .property-detail-hero--compact .property-share-wrapper {
-  position: fixed;
-  top: 27px;        /* (92px navbar − 38px btn) / 2 */
-  right: 220px;     /* a la izquierda de ← Propiedades */
-  z-index: 1300;
-  transform: none;
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .property-detail-hero--compact .property-share-btn {
   font-size: 0.75rem;
