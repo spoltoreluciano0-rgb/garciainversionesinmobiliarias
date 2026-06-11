@@ -649,6 +649,12 @@ body.menu-open .hdr-cta-btn {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
 .service-card,
 .market-card {
   border: 1px solid var(--line);
@@ -2034,6 +2040,7 @@ body[data-page-type="thank_you"] {
 
   .cards-4,
   .cards-3,
+  .services-grid,
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2088,6 +2095,7 @@ body[data-page-type="thank_you"] {
 
   .cards-4,
   .cards-3,
+  .services-grid,
   .stats,
   .form-grid,
   .properties-grid,
@@ -2253,7 +2261,24 @@ body[data-page-type="thank_you"] {
 }
 
 /* ─────────────────────────────────────────────────────────
-   30. Testimonios
+   30. Franja de números
+   ───────────────────────────────────────────────────────── */
+.numbers-strip {
+  background: var(--ivory);
+}
+
+.numbers-strip-text {
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────────────
+   31. Testimonios (legacy — puede eliminarse cuando se agreguen testimonios reales)
    ───────────────────────────────────────────────────────── */
 .testimonials {
   background: var(--ivory);
