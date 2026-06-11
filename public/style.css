@@ -1509,11 +1509,13 @@ body[data-page-type="property_detail"] .property-detail-hero--compact .property-
   font-size: 0.6rem;
   margin-bottom: 4px;
 }
-/* Share button inline en hero compacto */
+/* Share button fijo alineado al centro vertical del navbar */
 .property-detail-hero--compact .property-share-wrapper {
-  position: static;
+  position: fixed;
+  top: 27px;        /* (92px navbar − 38px btn) / 2 */
+  right: 220px;     /* a la izquierda de ← Propiedades */
+  z-index: 1300;
   transform: none;
-  flex-shrink: 0;
 }
 .property-detail-hero--compact .property-share-btn {
   font-size: 0.75rem;
