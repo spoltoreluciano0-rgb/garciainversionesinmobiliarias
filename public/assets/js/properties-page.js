@@ -32,8 +32,6 @@
     eau:                          "dubai",
     uae:                          "dubai",
     "united arab emirates":       "dubai",
-    mexico:                       "mexico",
-    "méxico":                     "mexico",
     uruguay:                      "uruguay",
     "punta del este":             "uruguay",
     montevideo:                   "uruguay",
@@ -140,8 +138,6 @@
       return "usa";
     if (text.includes("dubai") || text.includes("dubái"))
       return "dubai";
-    if (text.includes("mexico") || text.includes("méxico") || text.includes("riviera maya") || text.includes("tulum") || text.includes("playa del carmen"))
-      return "mexico";
     if (text.includes("uruguay") || text.includes("punta del este") || text.includes("montevideo"))
       return "uruguay";
     if (text.includes("espana") || text.includes("españa") || text.includes("madrid") || text.includes("barcelona"))
