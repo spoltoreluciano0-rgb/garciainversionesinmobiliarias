@@ -360,8 +360,8 @@
     const producer         = getProducer(property);
     const whatsappLink     = getWhatsAppLink(property, producer.name);
     const isInversion      = !!property.mostrar_como_inversion;
-    const mapEmbedUrl      = isInversion ? "" : getMapEmbedUrl(property);
-    const mapExternalUrl   = isInversion ? "" : getMapExternalUrl(property);
+    const mapEmbedUrl      = getMapEmbedUrl(property);
+    const mapExternalUrl   = getMapExternalUrl(property);
 
     const address =
       property.direccion         ||
@@ -381,7 +381,7 @@
     document.title = `${property.titulo || "Propiedad"} | García Inversiones`;
 
     detailRoot.innerHTML = `
-      <section class="property-detail-hero">
+      <section class="property-detail-hero${isInversion ? " property-detail-hero--compact" : ""}">
         <div class="container property-detail-hero-inner">
           <div class="property-detail-hero-text">
             <span class="eyebrow">${escapeHtml(heroTag)}</span>

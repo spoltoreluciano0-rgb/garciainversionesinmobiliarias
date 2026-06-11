@@ -1490,6 +1490,15 @@ a.footer-contact-item:hover { color: var(--gold); }
   font-size: clamp(1.05rem, 1.5vw, 1.35rem);
 }
 
+/* Hero compacto para fichas de inversión */
+.property-detail-hero--compact {
+  padding: 40px 0 36px;
+}
+.property-detail-hero--compact .property-detail-title {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 1;
+}
+
 .property-detail-bajada {
   margin-top: 12px;
   color: rgba(255, 255, 255, 0.65);
