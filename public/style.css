@@ -612,21 +612,19 @@ body.menu-open .hdr-cta-btn {
 }
 
 .stat {
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: linear-gradient(180deg, #fbfaf7, #f1ede6);
+  padding: 16px 0 16px 18px;
+  border-left: 2px solid var(--gold);
 }
 .stat strong {
   display: block;
   font-family: "Cormorant Garamond", serif;
-  font-size: 2.1rem;
+  font-size: 1.55rem;
   color: var(--navy);
-  line-height: 1;
-  margin-bottom: 6px;
+  line-height: 1.1;
+  margin-bottom: 4px;
 }
 .stat span {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--text-soft);
 }
 
@@ -655,8 +653,7 @@ body.menu-open .hdr-cta-btn {
   gap: 24px;
 }
 
-.service-card,
-.market-card {
+.service-card {
   border: 1px solid var(--line);
   border-radius: 24px;
   background: #fbfaf7;
@@ -664,8 +661,19 @@ body.menu-open .hdr-cta-btn {
   transition: var(--transition);
 }
 
+.market-card {
+  border-radius: 24px;
+  background: var(--navy);
+  border-top: 3px solid var(--gold);
+  box-shadow: 0 12px 40px rgba(12, 41, 72, 0.18);
+  transition: var(--transition);
+}
+
 .service-card {
   padding: 30px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
 }
 
 .service-card:hover,
@@ -689,11 +697,16 @@ body.menu-open .hdr-cta-btn {
 }
 
 .service-card h3,
-.market-card h3,
 .property-title,
 .contact-panel h3 {
   font-family: "Cormorant Garamond", serif;
   color: var(--navy);
+  font-weight: 600;
+}
+
+.market-card h3 {
+  font-family: "Cormorant Garamond", serif;
+  color: var(--white);
   font-weight: 600;
 }
 
@@ -702,11 +715,17 @@ body.menu-open .hdr-cta-btn {
   margin-bottom: 12px;
 }
 
-.service-card p,
-.market-card p {
+.service-card p {
   color: var(--text-soft);
   margin-bottom: 18px;
   font-size: 0.98rem;
+}
+
+.market-card p {
+  color: rgba(255, 255, 255, 0.68);
+  margin-bottom: 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .service-card ul {
@@ -753,28 +772,63 @@ body.menu-open .hdr-cta-btn {
 }
 
 .market-card {
-  padding: 28px;
+  padding: 28px 28px 26px;
 }
 .market-card h3 {
   font-size: 1.85rem;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .market-chip {
   display: inline-block;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(205, 160, 79, 0.14);
+  padding: 0;
+  background: none;
   color: var(--gold);
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 /* ─────────────────────────────────────────────────────────
    13. Why / CTA Band
    ───────────────────────────────────────────────────────── */
+
+.why-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 52px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 40px;
+}
+
+.why-stat {
+  text-align: center;
+  padding: 0 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+.why-stat:last-child {
+  border-right: none;
+}
+
+.why-stat-number {
+  display: block;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.why-stat-label {
+  display: block;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .why {
   background: var(--navy);
   color: var(--white);
@@ -2089,6 +2143,10 @@ body[data-page-type="thank_you"] {
   .section    { padding: 78px 0; }
   .section-sm { padding: 58px 0; }
   .hero       { min-height: 96svh; }
+
+  .why-stats { grid-template-columns: 1fr; gap: 24px; }
+  .why-stat  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0 0 24px; }
+  .why-stat:last-child { border-bottom: none; padding-bottom: 0; }
 
   .hero-title { font-size: clamp(2.8rem, 12vw, 4.5rem); line-height: 0.95; }
   .hero-text  { max-width: 100%; font-size: 1rem; }
