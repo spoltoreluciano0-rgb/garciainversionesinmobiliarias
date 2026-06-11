@@ -1494,6 +1494,13 @@ a.footer-contact-item:hover { color: var(--gold); }
 .property-detail-hero--compact,
 body[data-page-type="property_detail"] .property-detail-hero--compact {
   padding: 14px 0 12px !important;
+  position: relative;
+}
+.property-detail-hero--compact .property-detail-hero-inner {
+  justify-content: center;
+}
+.property-detail-hero--compact .property-detail-hero-text {
+  text-align: center;
 }
 .property-detail-hero--compact .property-detail-title,
 body[data-page-type="property_detail"] .property-detail-hero--compact .property-detail-title {
@@ -1504,6 +1511,12 @@ body[data-page-type="property_detail"] .property-detail-hero--compact .property-
 .property-detail-hero--compact .eyebrow {
   font-size: 0.6rem;
   margin-bottom: 4px;
+}
+.property-detail-hero--compact .property-share-wrapper {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .property-detail-hero--compact .property-share-btn {
   font-size: 0.75rem;
