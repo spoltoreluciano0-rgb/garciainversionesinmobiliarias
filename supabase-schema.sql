@@ -153,7 +153,17 @@ ALTER TABLE properties
   ) STORED;
 CREATE INDEX IF NOT EXISTS idx_properties_fts ON properties USING GIN (fts);
 
+-- ── Row Level Security (defensa en profundidad) ──────────────
+-- Toda la app accede con la SERVICE ROLE (server-side), que BYPASSA RLS. Activar
+-- RLS sin políticas deja sin acceso a los roles anon/authenticated (API pública),
+-- por si alguna vez se expusiera una anon key. No rompe nada del backend actual.
+ALTER TABLE properties             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE property_overrides     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE integration_logs       ENABLE ROW LEVEL SECURITY;
+
 -- ── Verificación / limpieza previa al CRM (ejecutar manualmente si hace falta) ──
 -- 1) ¿Está vacía la tabla?   →  SELECT count(*) AS total FROM properties;   (esperado: 0)
 -- 2) Vaciar datos de prueba  →  TRUNCATE properties CASCADE;  -- borra también property_overrides (FK ON DELETE CASCADE)
 -- 3) Confirmar unicidad      →  SELECT crm_app_id, count(*) FROM properties GROUP BY crm_app_id HAVING count(*) > 1;  (esperado: 0 filas)
+-- 4) Confirmar RLS activo    →  SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('properties','property_overrides','newsletter_subscribers','integration_logs');
