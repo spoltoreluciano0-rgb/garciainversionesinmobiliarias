@@ -1,15 +1,9 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
-
-// Captura errores de renderizado de React (App Router) y los reporta a Sentry.
-// Reemplaza el layout raíz cuando hay un error global, por eso lleva estilos inline.
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
-
+// Página de error global (App Router). Reemplaza el layout raíz ante un error de
+// render, por eso lleva estilos inline. Sentry quedó solo server-side (decisión de
+// performance del cliente): los errores de servidor se capturan vía onRequestError.
+export default function GlobalError(_props: { error: Error & { digest?: string } }) {
   return (
     <html lang="es">
       <body

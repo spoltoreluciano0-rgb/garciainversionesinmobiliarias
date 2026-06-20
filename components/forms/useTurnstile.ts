@@ -7,11 +7,9 @@ import { useCallback, useEffect, useRef } from 'react';
 // Sin NEXT_PUBLIC_TURNSTILE_SITE_KEY el widget no se renderiza y getToken
 // devuelve '' (el server hace fail-open si TURNSTILE_SECRET_KEY tampoco está).
 
-// La site key de Turnstile es PÚBLICA (va en el HTML). Prioridad: env var
-// NEXT_PUBLIC_TURNSTILE_SITE_KEY; fallback al valor histórico del sitio (site.js
-// legacy) para no romper si la env var no está cargada con el prefijo NEXT_PUBLIC_.
-const SITEKEY =
-  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADhZ9AUzLRzsy14F';
+// Site key de Turnstile vía env var pública (configurada en Vercel). Sin ella, el
+// widget no se renderiza y getToken devuelve '' (el server valida server-side).
+const SITEKEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
 type TurnstileApi = {
   render: (el: HTMLElement, opts: Record<string, unknown>) => string;
