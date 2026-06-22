@@ -2504,9 +2504,9 @@ body[data-page-type="thank_you"] {
 /* ─────────────────────────────────────────────────────────
    34. Performance / Accesibilidad
    ───────────────────────────────────────────────────────── */
-.section,
-.section-sm,
-.properties-page,
+/* content-visibility SOLO en secciones posteriores a todas las anclas de navegación.
+   No aplicar a .section / .section-sm: están por encima de #contacto y su placeholder
+   (contain-intrinsic-size) rompía el scroll a #contacto en mobile (landing en "Diferencial"). */
 .newsletter-section,
 .footer-premium {
   content-visibility: auto;
