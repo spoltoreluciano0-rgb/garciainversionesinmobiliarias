@@ -34,6 +34,10 @@ export function buildCsp(): string {
       ' https://stats.g.doubleclick.net' +
       ' https://www.googleadservices.com' +
       ' https://googleads.g.doubleclick.net' +
+      // Beacons de conversión de Google Ads (enhanced conversions / consent mode):
+      // www.google.com/ccm/collect y ad.doubleclick.net/ccm/s/collect.
+      ' https://www.google.com' +
+      ' https://ad.doubleclick.net' +
       ' https://connect.facebook.net' +
       ' https://www.facebook.com' +
       ' https://facebook.com' +

@@ -18,6 +18,11 @@ describe('CSP', () => {
   it('permite connect a la API del CRM 2Clics', () => {
     expect(csp).toContain('https://api.2clics.com.ar');
   });
+  it('permite los beacons de conversión de Google Ads en connect-src', () => {
+    const connectSrc = csp.split(';').find((d) => d.trim().startsWith('connect-src'))!;
+    expect(connectSrc).toContain('https://www.google.com');
+    expect(connectSrc).toContain('https://ad.doubleclick.net');
+  });
   it('permite iframes de Maps/YouTube/Vimeo/Matterport', () => {
     expect(csp).toContain('https://www.youtube-nocookie.com');
     expect(csp).toContain('https://my.matterport.com');
