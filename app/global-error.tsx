@@ -25,8 +25,7 @@ export default function GlobalError(_props: { error: Error & { digest?: string }
           Algo salió mal.
         </h1>
         <p style={{ color: '#7793ab', margin: '0 0 28px', maxWidth: 420 }}>
-          Tuvimos un problema inesperado. Ya fuimos notificados. Probá recargar la página o volver al
-          inicio.
+          Tuvimos un problema inesperado. Probá recargar la página o volver al inicio.
         </p>
         <a
           href="/"

@@ -3,7 +3,6 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/layout/WhatsAppFloat';
 import PropertiesComingSoon from '@/components/sections/PropertiesComingSoon';
-import { PROPERTIES_ENABLED } from '@/lib/flags';
 
 export const metadata: Metadata = {
   title: 'Propiedades | García Inversiones Inmobiliarias',
@@ -17,9 +16,9 @@ export default function PropiedadesPage() {
     <>
       <Header />
       <main>
-        {/* Fase 5: cuando PROPERTIES_ENABLED=true se renderiza el listado con filtros
-            (PropertyFilters + PropertyGrid) consumiendo searchProperties(). */}
-        {PROPERTIES_ENABLED ? <PropertiesComingSoon /> : <PropertiesComingSoon />}
+        {/* En Fase 5 se cablea acá el listado real (PropertyFilters + PropertyGrid)
+            consumiendo searchProperties(). Por ahora se muestra el placeholder. */}
+        <PropertiesComingSoon />
       </main>
       <Footer />
       <WhatsAppFloat />
