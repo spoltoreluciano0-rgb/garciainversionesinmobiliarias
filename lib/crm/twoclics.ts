@@ -2,6 +2,7 @@
 // Portado de legacy/server.js:729-800. El CRM nunca puede sobreescribir campos
 // manuales (MANUAL_ONLY_FIELDS) — informe §4/§5.5.
 
+import { timingSafeEqual } from 'node:crypto';
 import { env } from '@/lib/env';
 import { isPublicHttpsUrl } from '@/lib/security/ssrf';
 import {
@@ -90,5 +91,10 @@ export function crmToWebProperty(prop: Record<string, any>): Record<string, any>
 // validateHash rechaza si el hash no está configurado en .env — server.js:796-800
 export function validateHash(hash: unknown): boolean {
   if (!env.CRM_HASH) return false;
-  return hash === env.CRM_HASH;
+  // Comparación constante para no filtrar info por timing.
+  const provided = Buffer.from(typeof hash === 'string' ? hash : String(hash ?? ''), 'utf8');
+  const expected = Buffer.from(env.CRM_HASH, 'utf8');
+  // timingSafeEqual tira si los largos difieren: descartamos antes.
+  if (provided.length !== expected.length) return false;
+  return timingSafeEqual(provided, expected);
 }

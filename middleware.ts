@@ -30,7 +30,7 @@ export function middleware(req: NextRequest) {
     const allowed = allowedOrigins();
 
     // Sin Origin (server→server, curl, Postman) se permite; el webhook valida hash.
-    if (origin && !allowed.some((a) => origin.startsWith(a))) {
+    if (origin && !allowed.includes(origin)) {
       return new NextResponse(JSON.stringify({ ok: false, message: 'Origen no permitido.' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

@@ -4,6 +4,10 @@ import { withSentryConfig } from '@sentry/nextjs';
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false, // paridad con app.disable('x-powered-by') del server.js legacy
+  // El lint corre como aviso (local/CI con `npm run lint`), pero NO bloquea el
+  // build de producción. Se puede volver bloqueante más adelante, cuando el
+  // proyecto corra limpio un tiempo (decisión de Luciano, revisión semanal).
+  eslint: { ignoreDuringBuilds: true },
   images: {
     formats: ['image/avif', 'image/webp'],
     // Cuando lleguen las propiedades del CRM (Fase 5), next/image necesita los

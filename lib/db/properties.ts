@@ -136,7 +136,10 @@ export async function dbGetProperty(id: string): Promise<any | null> {
     );
   }
   try {
-    const safeId = String(id || '').slice(0, 200);
+    // Whitelist de caracteres: elimina metacaracteres PostgREST (coma, paréntesis,
+    // punto, etc.) para evitar inyección en el filtro .or(). Los ids del CRM son
+    // alfanuméricos, así que no se ven alterados.
+    const safeId = String(id || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 200);
     const { data, error } = await supabase
       .from('properties')
       .select('*, property_overrides(*)')
@@ -261,7 +264,9 @@ export async function dbUpsertProperty(mapped: Record<string, any>): Promise<voi
 export async function dbDeleteProperty(propId: string): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
-  const safeId = String(propId || '').slice(0, 200);
+  // Whitelist de caracteres: igual que en dbGetProperty, neutraliza metacaracteres
+  // PostgREST en el filtro .or() sin tocar ids alfanuméricos legítimos.
+  const safeId = String(propId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 200);
   const { error } = await supabase
     .from('properties')
     .delete()
