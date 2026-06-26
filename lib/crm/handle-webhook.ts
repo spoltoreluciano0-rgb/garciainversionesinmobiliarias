@@ -31,7 +31,7 @@ export async function handle2ClicsWebhook(req: Request): Promise<Response> {
   if (len && len > MAX_BODY_BYTES) return text('PAYLOAD_TOO_LARGE', 413);
 
   // Rate limit: máx 120 llamadas por minuto por IP
-  if (!checkRate(clientIp(req), '2clics', 120, 60_000)) {
+  if (!(await checkRate(clientIp(req), '2clics', 120, 60_000))) {
     return text('TOO_MANY_REQUESTS', 429);
   }
 

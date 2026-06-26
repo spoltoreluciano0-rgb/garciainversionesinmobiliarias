@@ -35,7 +35,7 @@ export async function submitNewsletter(formData: FormData): Promise<ActionResult
   const userAgent = (await headers()).get('user-agent') || '';
 
   // Rate limit: 3 envíos cada 15 minutos por IP
-  if (!checkRate(ip, 'newsletter', 3, 15 * 60_000)) {
+  if (!(await checkRate(ip, 'newsletter', 3, 15 * 60_000))) {
     return { ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' };
   }
 

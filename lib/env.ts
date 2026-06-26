@@ -24,6 +24,11 @@ export const env = {
 
   // Turnstile (secreta)
   TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY || '',
+
+  // Upstash Redis (rate limit global entre instancias serverless).
+  // Vacío = fallback al rate limiter en memoria por-instancia.
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || '',
+  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
 };
 
 export const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;

@@ -38,7 +38,7 @@ export async function submitContact(formData: FormData): Promise<ActionResult> {
   const userAgent = (await headers()).get('user-agent') || '';
 
   // Rate limit: 5 envíos cada 15 minutos por IP
-  if (!checkRate(ip, 'contact', 5, 15 * 60_000)) {
+  if (!(await checkRate(ip, 'contact', 5, 15 * 60_000))) {
     return { ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.' };
   }
 
