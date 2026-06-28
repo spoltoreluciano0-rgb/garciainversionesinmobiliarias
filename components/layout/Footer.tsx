@@ -12,6 +12,8 @@ export default function Footer() {
               <img
                 src="/assets/logos/Garcia.svg"
                 alt="García Inversiones Inmobiliarias"
+                width={800}
+                height={200}
                 decoding="async"
               />
             </Link>

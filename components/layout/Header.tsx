@@ -57,8 +57,8 @@ export default function Header() {
           <img
             src="/assets/logos/Garcia-simple.svg"
             alt="García Inversiones Inmobiliarias"
-            width={2048}
-            height={1152}
+            width={800}
+            height={200}
             decoding="async"
           />
         </Link>
@@ -87,8 +87,8 @@ export default function Header() {
               <img
                 src="/assets/logos/Garcia-simple.svg"
                 alt="Logo García Inversiones Inmobiliarias"
-                width={2048}
-                height={1152}
+                width={800}
+                height={200}
                 decoding="async"
               />
             </Link>
