@@ -11,6 +11,7 @@ import Why from '@/components/sections/Why';
 import CtaBand from '@/components/sections/CtaBand';
 import Contact from '@/components/sections/Contact';
 import Newsletter from '@/components/sections/Newsletter';
+import TurnstileScript from '@/components/forms/TurnstileScript';
 import { PROPERTIES_ENABLED } from '@/lib/flags';
 
 export default function HomePage() {
@@ -34,6 +35,8 @@ export default function HomePage() {
       <Footer />
       <WhatsAppFloat />
       <RevealObserver />
+      {/* Turnstile: solo en la home porque es la única ruta con formularios. */}
+      <TurnstileScript />
     </>
   );
 }

@@ -118,14 +118,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {children}
 
-        {/* Turnstile invisible — render explícito vía JS (consumido en Fase 4) */}
-        <Script id="turnstile-ready" strategy="beforeInteractive">
-          {`window.onTurnstileReady=function(){window._tsReady=true;document.dispatchEvent(new Event('ts:ready'));};`}
-        </Script>
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileReady"
-          strategy="afterInteractive"
-        />
+        {/* Turnstile NO se carga acá: el script vive en <TurnstileScript /> y se
+            incluye solo en las rutas con formulario (hoy, la home). */}
 
         {/* Google Tag Manager */}
         <Script id="gtm" strategy="afterInteractive">
