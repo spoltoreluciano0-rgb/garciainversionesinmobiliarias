@@ -914,7 +914,7 @@ body.menu-open .hdr-cta-btn {
   align-items: center;
   box-shadow: 0 25px 70px rgba(12, 41, 72, 0.18);
 }
-.cta-band h3 {
+.cta-band h2 {
   font-family: var(--font-cormorant), serif;
   font-size: clamp(2rem, 4vw, 3.5rem);
   line-height: 0.95;
